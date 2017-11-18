@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Takume Kume pages</title>
+    <link>http://takumakume.githuh.io/</link>
+    <description>Recent content on Takume Kume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Sat, 18 Nov 2017 23:27:31 +0900</lastBuildDate>
+    
+	<atom:link href="http://takumakume.githuh.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>New Blog</title>
+      <link>http://takumakume.githuh.io/blog/2017-11-18-new-blog/</link>
+      <pubDate>Sat, 18 Nov 2017 23:27:31 +0900</pubDate>
+      
+      <guid>http://takumakume.githuh.io/blog/2017-11-18-new-blog/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://takumakume.githuh.io/about/</link>
+      <pubDate>Sat, 18 Nov 2017 00:00:00 +0900</pubDate>
+      
+      <guid>http://takumakume.githuh.io/about/</guid>
+      <description> Takuma Kume  Infra engineer @GMO Pepabo, Inc linux/mruby/ngx_mruby/mod_mruby  Slides 2017  11&amp;frasl;18 第10回ペパボテックカンファレンス  Webサーバ拡張における排他制御のパフォーマンスチューニング  10&amp;frasl;08 ペパボ・はてな技術大会  ホスティングにおける安定運用のためのアクセスコントロール手法  4&amp;frasl;26 ホスティング Tech MTG  MHAでデータベースの運用を楽にしよう！   2016  10&amp;frasl;29 GMO Hosting conference  ホスティングにおける柔軟なアクセス制御の必要性とその実装   2013  07/18 DNS Summer Days 2013  児童ポルノブロッキングの実装と運用自動化   </description>
+    </item>
+    
+  </channel>
+</rss>

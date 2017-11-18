@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Blogs on Takume Kume pages</title>
+    <link>http://takumakume.githuh.io/blog/</link>
+    <description>Recent content in Blogs on Takume Kume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Sat, 18 Nov 2017 23:27:31 +0900</lastBuildDate>
+    
+	<atom:link href="http://takumakume.githuh.io/blog/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>New Blog</title>
+      <link>http://takumakume.githuh.io/blog/2017-11-18-new-blog/</link>
+      <pubDate>Sat, 18 Nov 2017 23:27:31 +0900</pubDate>
+      
+      <guid>http://takumakume.githuh.io/blog/2017-11-18-new-blog/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>
