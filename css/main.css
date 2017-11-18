@@ -19,7 +19,7 @@ p {
   margin: 30px 0;
 }
 p a {
-  /* text-decoration: underline */
+  /* text-decoration: underline; */
   color: #008AFF;
 }
 h1,h2,h3,h4,h5,h6 {
@@ -674,4 +674,16 @@ table tr td :last-child {
 input.gsc-input, .gsc-input-box, .gsc-input-box-hover, .gsc-input-box-focus, .gsc-search-button {
   box-sizing: content-box;
   line-height: normal;
+}
+
+/* -- Cunstom CSS -- */
+.links {
+  text-align: center;
+}
+.links p {
+  font-weight: bold;
+  font-size: 30px;
+}
+.links p > a {
+  color: #27A822;
 }
