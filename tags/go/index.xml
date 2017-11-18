@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Go on Takume Kume pages</title>
-    <link>https://takumakume.githuh.io/tags/go/</link>
+    <link>/tags/go/</link>
     <description>Recent content in Go on Takume Kume pages</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja-jp</language>
     <lastBuildDate>Sat, 18 Nov 2017 23:27:31 +0900</lastBuildDate>
     
-	<atom:link href="https://takumakume.githuh.io/tags/go/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="/tags/go/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>New Blog</title>
-      <link>https://takumakume.githuh.io/blog/2017-11-18-new-blog/</link>
+      <link>/blog/2017-11-18-new-blog/</link>
       <pubDate>Sat, 18 Nov 2017 23:27:31 +0900</pubDate>
       
-      <guid>https://takumakume.githuh.io/blog/2017-11-18-new-blog/</guid>
+      <guid>/blog/2017-11-18-new-blog/</guid>
       <description></description>
     </item>
     
