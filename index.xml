@@ -28,5 +28,143 @@
       <description> Takuma Kume  Infra engineer @GMO Pepabo, Inc linux/mruby/ngx_mruby/mod_mruby  Slides 2017  11&amp;frasl;18 第10回ペパボテックカンファレンス  Webサーバ拡張における排他制御のパフォーマンスチューニング  10&amp;frasl;08 ペパボ・はてな技術大会  ホスティングにおける安定運用のためのアクセスコントロール手法  4&amp;frasl;26 ホスティング Tech MTG  MHAでデータベースの運用を楽にしよう！   2016  10&amp;frasl;29 GMO Hosting conference  ホスティングにおける柔軟なアクセス制御の必要性とその実装   2013  07/18 DNS Summer Days 2013  児童ポルノブロッキングの実装と運用自動化   </description>
     </item>
     
+    <item>
+      <title>mod_mrubyを使ってリクエスト毎のCPU使用時間に応じたアクセス制限を行う</title>
+      <link>/blog/2017-04-05-mod-mruby-cpu-time-control/</link>
+      <pubDate>Wed, 05 Apr 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2017-04-05-mod-mruby-cpu-time-control/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Linuxのスレッド内でchrootした場合の影響範囲を調べた</title>
+      <link>/blog/2017-01-18-chroot/</link>
+      <pubDate>Wed, 18 Jan 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2017-01-18-chroot/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>2016年の振り返り〜エンジニアとして這い上がる</title>
+      <link>/blog/2016-12-31-refrection-2016/</link>
+      <pubDate>Sat, 31 Dec 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-12-31-refrection-2016/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pmilterでmrubyを用いてメールのDDoSを軽減する</title>
+      <link>/blog/2016-12-13-smtp-dos-detector/</link>
+      <pubDate>Tue, 13 Dec 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-12-13-smtp-dos-detector/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pmilterで任意のToやFrom、ヘッダ、文字列をキーにメールの通数制御を行う</title>
+      <link>/blog/2016-11-07-smtp-access-limiter/</link>
+      <pubDate>Mon, 07 Nov 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-11-07-smtp-access-limiter/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pmilter &#43; postfixでプログラマブルなSMTPサーバを作る（入門編）</title>
+      <link>/blog/2016-11-06-install-pmilter/</link>
+      <pubDate>Sun, 06 Nov 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-11-06-install-pmilter/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコードを書く</title>
+      <link>/blog/2016-08-17-mruby-mtest/</link>
+      <pubDate>Wed, 17 Aug 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-08-17-mruby-mtest/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mrubyのCIをdocker&#43;rake&#43;travis-ciでやる</title>
+      <link>/blog/2016-08-17-mruby-ci/</link>
+      <pubDate>Wed, 17 Aug 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-08-17-mruby-ci/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mod_mruby &#43; http-access-limiterでファイル単位での同時アクセス数を制御し性能比較をした</title>
+      <link>/blog/2016-07-27-http-access-limiter/</link>
+      <pubDate>Wed, 27 Jul 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-07-27-http-access-limiter/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する</title>
+      <link>/blog/2016-07-26-install-mod-mruby/</link>
+      <pubDate>Tue, 26 Jul 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-07-26-install-mod-mruby/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ngx_mrubyでmemcachedやmysqldのコネクションを使いまわす(性能測定)</title>
+      <link>/blog/2016-07-15-connection-recycle-measure/</link>
+      <pubDate>Fri, 15 Jul 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-07-15-connection-recycle-measure/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ngx_mrubyでmemcachedやmysqldのコネクションを使いまわす</title>
+      <link>/blog/2016-07-14-connection-recycle/</link>
+      <pubDate>Thu, 14 Jul 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-07-14-connection-recycle/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ペパボに入社して1ヶ月が過ぎた</title>
+      <link>/blog/2016-05-14-join-pepabo-a-month-ago/</link>
+      <pubDate>Sat, 14 May 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-05-14-join-pepabo-a-month-ago/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ngx_mrubyで転送先を外部参照するリバースプロキシを構築する</title>
+      <link>/blog/2016-05-10-ngx-mruby-reverse-proxy/</link>
+      <pubDate>Tue, 10 May 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-05-10-ngx-mruby-reverse-proxy/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>CentOS6で ngx_mruby &#43; mruby-memcached &#43; mruby-mysql をインストールした</title>
+      <link>/blog/2016-04-11-try-install-mod-mruby/</link>
+      <pubDate>Mon, 11 Apr 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-04-11-try-install-mod-mruby/</guid>
+      <description>こんばんは。GMOペパボ試用期間の久米です。
+以下の要件のリバースプロキシサーバを作成したいため、ngx_mrubyを触ってみました。
+ リクエストホスト名に応じて転送先のサーバを変更する。 ホスト名と転送先サーバのひも付けの情報をMemcachedのサーバから取得する。 キャッシュが存在していなければMySQLデータベースから取得し、キャッシュを書き込む。  この要件を ngx_mruby + mruby-memcached + mruby-mysql で満たすべく、 本エントリではインストール方法について記載します。
+環境    # バージョン     OS CentOS 6.6   kernel 2.6.32-504.el6.x86_64   Ruby 2.2.4   nginx 1.9.14   ngx_mruby 1.1.17    今回はルートユーザで作業を行います。 sudo su -  Ruby (rbenv) 環境を構築 必要なライブラリをインストール yum install -y git openssl-devel readline-devel zlib-devel  rbenv + ruby-buildをダウンロード git clone https://github.</description>
+    </item>
+    
   </channel>
 </rss>
