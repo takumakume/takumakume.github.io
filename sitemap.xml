@@ -8,11 +8,6 @@
   </url>
   
   <url>
-    <loc>/about/</loc>
-    <lastmod>2017-11-18T00:00:00+09:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/blog/2017-04-05-mod-mruby-cpu-time-control/</loc>
     <lastmod>2017-04-05T00:00:00+09:00</lastmod>
   </url>
@@ -89,7 +84,10 @@
   
   <url>
     <loc>/about/</loc>
-    <lastmod>2017-11-18T00:00:00+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/about/</loc>
     <priority>0</priority>
   </url>
   
