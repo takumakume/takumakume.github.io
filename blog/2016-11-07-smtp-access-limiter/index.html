@@ -8,6 +8,9 @@
   <title>pmilterで任意のToやFrom、ヘッダ、文字列をキーにメールの通数制御を行う | takumakume pages</title>
   <meta property="og:title" content="pmilterで任意のToやFrom、ヘッダ、文字列をキーにメールの通数制御を行う" />
   <meta name="twitter:title" content="pmilterで任意のToやFrom、ヘッダ、文字列をキーにメールの通数制御を行う" />
+  <meta name="description" content="はじめに 先日は 「pmilter &#43; postfixでプログラマブルなSMTPサーバを作る（入門編）」の記事でpmilterの環境構築を行いました">
+  <meta property="og:description" content="はじめに 先日は 「pmilter &#43; postfixでプログラマブルなSMTPサーバを作る（入門編）」の記事でpmilterの環境構築を行いました">
+  <meta name="twitter:description" content="はじめに 先日は 「pmilter &#43; postfixでプログラマブルなSMTPサーバを作る（入門編）」の記事でpmilterの環境構築を行いました">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -185,6 +188,211 @@
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
         
+
+<h3 id="はじめに">はじめに</h3>
+
+<p>先日は 「<a href="http://blog.konbu.link/2016/11/06/pmilter-start/">pmilter + postfixでプログラマブルなSMTPサーバを作る（入門編）</a>」の記事で<a href="https://github.com/matsumotory/pmilter">pmilter</a>の環境構築を行いました。
+本エントリでは、<a href="https://github.com/matsumotory/pmilter">pmilter</a>を活用して実際にメールの通数を制御するソフトウェアを作成しました。</p>
+
+<p><a href="https://github.com/takumakume/smtp-access-limiter">smtp-access-limiter</a> (まだプロトタイプ)</p>
+
+<h3 id="smtp-access-limiterとは">smtp-access-limiterとは</h3>
+
+<p>任意のToやFrom、文字列などをキーとして、一定期間のメールの通数をカウントするソフトウェアです。
+キーとして利用するのは、pmilterの各SMTPプロトコルフローの中で取得できるパラメータです。</p>
+
+<p>また、pmilterの性質上メールがキューに入る前に処理されるので、処理できないメールを効率よく制御することができます。</p>
+
+<h3 id="ソフトウェアの紹介にあたって">ソフトウェアの紹介にあたって</h3>
+
+<p>今回は、pmilterで取得できるパラメータの中でも RCPT TOのフェーズで取得できるenvelop toからドメイン名を取得して、それをキーとします。
+&ldquo;RCPT TO: hoge@foo.com&rdquo; であれば &ldquo;foo.com&rdquo; をキーとする。</p>
+
+<p>その上で、一定期間内に同一の送信先のドメインに送れるメール通数の制御を行ってみます。</p>
+
+<h3 id="let-s-development">Let&rsquo;s development!!</h3>
+
+<h5 id="pmilterのビルド">pmilterのビルド</h5>
+
+<p>pmilterの &ldquo;src/mruby/build_config.rb&rdquo; でpmilterで実行するmruby scriptで使うmgemの設定を行うところがあります。今回は以下のmgemを利用しますので設定してpmilterを再ビルドします。</p>
+
+<ul>
+<li>matsumotory/mruby-mutex</li>
+<li>matsumotory/mruby-localmemcache</li>
+</ul>
+
+<pre><code class="language-diff"># git diff src/mruby/build_config.rb
+diff --git a/src/mruby/build_config.rb b/src/mruby/build_config.rb
+index bc9e69e..c157a37 100644
+--- a/src/mruby/build_config.rb
++++ b/src/mruby/build_config.rb
+@@ -18,6 +18,8 @@ MRuby::Build.new do |conf|
+   # conf.gem 'examples/mrbgems/c_and_ruby_extension_example'
+   # conf.gem :github =&gt; 'masuidrive/mrbgems-example', :checksum_hash =&gt; '76518e8aecd131d047378448ac8055fa29d974a9'
+   # conf.gem :git =&gt; 'git@github.com:masuidrive/mrbgems-example.git', :branch =&gt; 'master', :options =&gt; '-v'
++  conf.gem :github =&gt; 'matsumotory/mruby-mutex'
++  conf.gem :github =&gt; 'matsumotory/mruby-localmemcache'
+
+   # include the default GEMs
+   conf.gembox 'default'
+</code></pre>
+
+<p>再ビルド</p>
+
+<pre><code class="language-sh">make mruby
+make
+</code></pre>
+
+<h5 id="pmilterの設定">pmilterの設定</h5>
+
+<ul>
+<li>pmilter.conf</li>
+</ul>
+
+<pre><code>[server]
+# hoge.sock or ipaddree:port
+listen = &quot;/var/tmp/pmilter.sock&quot;
+timeout = 7210
+log_level = &quot;debug&quot;
+mruby_handler = true
+listen_backlog = 128
+debug = 1
+
+[handler]
+# envelope recipient filter handler
+mruby_envrcpt_handler = &quot;handler/access_limiter.rb&quot;
+</code></pre>
+
+<ul>
+<li>handler/access_limiter.rb</li>
+</ul>
+
+<pre><code class="language-ruby">global_mutex = Mutex.new :global =&gt; true
+
+class AccessLimiter
+  def initialize config
+    @current_time = Time.new.localtime.to_i
+    @counter_kvs = Cache.new :namespace =&gt; &quot;smtp_access_limiter&quot;
+    @counter_key = config[:target]
+    raise &quot;config[:target] is nil&quot; unless @counter_key
+    @interval_time = config[:interval_time].to_i
+    raise &quot;config[:interval_time] is nil&quot; unless config[:interval_time]
+  end
+
+  def cleanup
+    ctime = @counter_kvs[&quot;create_time_#{@counter_key}&quot;].to_i
+    return false if ctime == 0
+    if (ctime + @interval_time) &lt; @current_time
+      @counter_kvs.delete(&quot;create_time_#{@counter_key}&quot;)
+      @counter_kvs.delete(@counter_key)
+      true
+    else
+      false
+    end
+  end
+
+  def current
+    @counter_kvs[@counter_key]
+  end
+
+  def increment
+    cur = current.to_i
+    if cur == 0
+      @counter_kvs[&quot;create_time_#{@counter_key}&quot;] = @current_time.to_s
+    end
+    @counter_kvs[@counter_key] = (cur + 1).to_s
+  end
+end
+
+#-------------------------
+# ここから下のコードを書き換えて制御単位を変える。
+# この例ではenvelope toのドメイン単位で送信制御を行っている。
+#-------------------------
+
+# 一定期間内に許可する通数
+threshold = 10
+
+# envelope_toからドメイン部分を抽出
+target = Pmilter::Session.new.envelope_to.split(&quot;@&quot;)[1]
+
+config = {
+  :target =&gt; target,
+  # 期間指定(秒)
+  :interval_time =&gt; 60
+}
+limiter = AccessLimiter.new(config)
+status = limiter.cleanup
+p &quot;access_limiter: cleanup counter #{target} interval_time: #{interval_time}&quot; if status
+
+timeout = global_mutex.try_lock_loop(50000) do
+  begin
+    limiter.increment
+    p &quot;access_limiter: increment #{target} current: #{limiter.current} threshold: #{threshold}&quot;
+    if limiter.current.to_i &gt; threshold
+      p &quot;access_limiter: reject #{target} threshold: #{threshold}&quot;
+      Pmilter.status = Pmilter::SMFIS_REJECT
+    end
+  rescue =&gt; e
+    p &quot;access_limiter: increment error #{target} #{e}&quot;
+  ensure
+    global_mutex.unlock
+  end
+  if timeout
+    &quot;access_limiter: get timeout lock, #{target}&quot;
+  end
+end
+</code></pre>
+
+<ul>
+<li>メールが送信されて、rcpt toが実行されたときにこのソースコードが実行される。</li>
+<li>envelope to の ドメイン名が抽出され、それをキーとしてKVS上のカウンターをインクリメントする。</li>
+<li>インクリメント時に0-&gt;1になったときだけ、cureate_time_DOMAINのキーを作成し、時刻を記録する。</li>
+<li>インクリメント処理の前に、cureate_time_DOMAINが指定したinterval_timeを経過していた場合はカウンターを削除する。</li>
+</ul>
+
+<h5 id="動作">動作</h5>
+
+<p>hoge@pmilter.localへメールを送っていきます。</p>
+
+<ul>
+<li>1通目</li>
+</ul>
+
+<pre><code>&quot;access_limiter: increment pmilter.local current: 1 threshold: 10&quot;
+</code></pre>
+
+<ul>
+<li>2通目</li>
+</ul>
+
+<pre><code>&quot;access_limiter: increment pmilter.local current: 2 threshold: 10&quot;
+</code></pre>
+
+<ul>
+<li>11通目 (ここからRejectされている)</li>
+</ul>
+
+<pre><code>&quot;access_limiter: increment pmilter.local current: 11 threshold: 10&quot;
+&quot;access_limiter: reject pmilter.local threshold: 10&quot;
+</code></pre>
+
+<ul>
+<li>1分経過後の1通目 (通数カウントがリセットされている)</li>
+</ul>
+
+<pre><code>&quot;access_limiter: cleanup counter pmilter.local&quot;
+&quot;access_limiter: increment pmilter.local current: 1 threshold: 10&quot;
+</code></pre>
+
+<h3 id="今後について">今後について</h3>
+
+<ul>
+<li>smtp-access-limiterはまだプロトタイプなので、これからテストの作成やパフォーマンス試験などを行う。</li>
+<li>現段階で動作ログが標準出力のみなので、ログ出力できるようにする。</li>
+<li>現在すべてのキーに対して同じ閾値しか設定できないので、その設定を外出しし、キー毎に設定できるようにする。</li>
+<li>このソフトウェアの構成では、サーバ内に閉じたKVSを使ってメール通数のカウントを行っている。メールシステム全体のメール通数カウントを行っていきたいとも考えているのでredisなどのネットワーク越しのKVSを使って全サーバでメール通数を共有できるようなものも開発予定。</li>
+</ul>
+
       </article>
 
       <ul class="pager blog-pager">

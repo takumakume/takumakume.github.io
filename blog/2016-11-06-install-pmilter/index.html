@@ -8,6 +8,9 @@
   <title>pmilter &#43; postfixでプログラマブルなSMTPサーバを作る（入門編） | takumakume pages</title>
   <meta property="og:title" content="pmilter &#43; postfixでプログラマブルなSMTPサーバを作る（入門編）" />
   <meta name="twitter:title" content="pmilter &#43; postfixでプログラマブルなSMTPサーバを作る（入門編）" />
+  <meta name="description" content="pmilterとは pmilter @matsumotoryが開発しているmrubyでコントロール可能なmilterである。 ngx_mrubyやmod_mr">
+  <meta property="og:description" content="pmilterとは pmilter @matsumotoryが開発しているmrubyでコントロール可能なmilterである。 ngx_mrubyやmod_mr">
+  <meta name="twitter:description" content="pmilterとは pmilter @matsumotoryが開発しているmrubyでコントロール可能なmilterである。 ngx_mrubyやmod_mr">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -185,6 +188,208 @@
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
         
+
+<h2 id="pmilterとは">pmilterとは</h2>
+
+<ul>
+<li><a href="https://github.com/matsumotory/pmilter">pmilter</a></li>
+<li><a href="https://twitter.com/matsumotory">@matsumotory</a>が開発している<a href="https://github.com/mruby/mruby">mruby</a>でコントロール可能な<a href="https://en.wikipedia.org/wiki/Milter">milter</a>である。</li>
+<li>ngx_mrubyやmod_mrubyなどを使ったことがある人であれば、そのようなイメージでメールの制御を行うことができる。</li>
+</ul>
+
+<h5 id="何ができるのか">何ができるのか？</h5>
+
+<ul>
+<li>MTAに組み込むことで、メールの様々な情報を元にmrubyで制御できる。
+
+<ul>
+<li>SMTPプロトコルの各フェーズでmrubyをフックすることができ、メールのenvelopeやヘッダ、TLSの情報や認証情報などを利用してメールの制御を行うことができる。</li>
+</ul></li>
+</ul>
+
+<h2 id="環境を構築する">環境を構築する</h2>
+
+<h5 id="環境">環境</h5>
+
+<ul>
+<li>CentOS 7.2</li>
+<li>postfix 8.14.7</li>
+<li>ruby 2.0</li>
+</ul>
+
+<h5 id="selinuxの無効化">SELinuxの無効化</h5>
+
+<ul>
+<li>SELinuxを無効にしないと、pmilterのsocketとpostfixが通信できなくなる。</li>
+</ul>
+
+<pre><code class="language-sh">sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+setenforce 0
+</code></pre>
+
+<h5 id="必要なパッケージのインストール">必要なパッケージのインストール</h5>
+
+<pre><code class="language-sh">yum install -y git \
+               mailx \
+               ruby \
+               gcc \
+               gcc-c++ \
+               make \
+               cmake \
+               autoconf \
+               automake \
+               libtool \
+               bison
+rpm -ivh ftp://ftp.pbone.net/mirror/ftp.sourceforge.net/pub/sourceforge/k/ke/kenzy/special/C7/x86_64/ragel-6.8-3.el7.centos.x86_64.rpm
+</code></pre>
+
+<h5 id="pmilterのビルド">pmilterのビルド</h5>
+
+<pre><code class="language-sh">cd /usr/local/src/ &amp;&amp; git clone https://github.com/matsumoto-r/pmilter.git
+</code></pre>
+
+<pre><code class="language-sh">cd /usr/local/src/pmilter
+make mruby
+make
+</code></pre>
+
+<pre><code class="language-sh">[root@pmilter pmilter]# file pmilter
+pmilter: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=5bed3d8ff85db4e11865d073542d063671c61794, not stripped
+</code></pre>
+
+<h5 id="pmilterの設定">pmilterの設定</h5>
+
+<p>今回はSMTPサーバにpmilterを同居させて、socketを使ってpostfixと通信する。</p>
+
+<ul>
+<li>pmilter.conf の listen を以下のようにする。</li>
+</ul>
+
+<pre><code class="language-sh">listen = &quot;/var/spool/postfix/pmilter/pmilter.sock&quot;
+</code></pre>
+
+<ul>
+<li>ディレクトリを作成</li>
+</ul>
+
+<pre><code class="language-sh">mkdir -p /var/spool/postfix/pmilter
+</code></pre>
+
+<h5 id="pmilterを起動する">pmilterを起動する</h5>
+
+<ul>
+<li>以下のようにするとフォアグラウンドでpmilterが起動する。</li>
+<li>実際にはpostfixの起動スクリプトなどにバックグラウンドで起動するようにする感じ。</li>
+</ul>
+
+<pre><code class="language-sh">sudo -u postfix ./pmilter -c pmilter.conf
+[Thu, 03 Nov 2016 15:38:11 GMT][notice]: pmilter/0.0.1 starting
+
+</code></pre>
+
+<h5 id="postfix-で-pmilter-の-socket-を利用する">postfix で pmilter の socket を利用する。</h5>
+
+<ul>
+<li>/etc/postfix/main.cf に以下を記述する。</li>
+</ul>
+
+<pre><code class="language-sh">smtpd_milters = unix:/var/spool/postfix/pmilter/pmilter.sock
+</code></pre>
+
+<ul>
+<li>postfix を再起動する。</li>
+</ul>
+
+<pre><code class="language-sh">systemctl restart postfix
+</code></pre>
+
+<h5 id="動作確認">動作確認</h5>
+
+<ul>
+<li>メールを送信</li>
+</ul>
+
+<pre><code class="language-sh">echo &quot;test&quot; | mail -s &quot;test&quot; YOUR_MAILADDRESS@gmail.com
+</code></pre>
+
+<ul>
+<li>デフォルトであれば、SMTPプロトコルの各フェーズで取得できる情報が表示される。</li>
+</ul>
+
+<pre><code># sudo -u postfix ./pmilter -c pmilter.conf
+[Thu, 03 Nov 2016 15:38:11 GMT][notice]: pmilter/0.0.1 starting
+ello pmilter handler called from pmilter
+client ipaddr 127.0.0.1
+client hostname pmilter.local
+client daemon pmilter.local
+handler phase name: mruby_connect_handler
+helo hostname: pmilter.local
+tls client issuer:
+tls client subject:
+tls session key size:
+tls encrypt method:
+tls version:
+env from from args: &lt;vagrant@pmilter.local&gt;
+env from from symval: vagrant@pmilter.local
+SASL login name:
+SASL login sender: vagrant@pmilter.local
+SASL login type:
+env to from arg: YOUR_MAILADDRESS@gmail.com
+env to from symval: YOUR_MAILADDRESS@gmail.com
+header: {&quot;Received&quot;=&gt;&quot;(from root@localhost)\n\tby pmilter.local (8.14.7/8.14.7/Submit) id uA49fLxF003015\n\tfor YOUR_MAILADDRESS@gmail.com; Fri, 4 Nov 2016 09:41:21 GMT&quot;}
+header: {&quot;From&quot;=&gt;&quot;vagrant &lt;vagrant@pmilter.local&gt;&quot;}
+header: {&quot;Message-Id&quot;=&gt;&quot;&lt;201611040941.uA49fLxF003015@pmilter.local&gt;&quot;}
+header: {&quot;Date&quot;=&gt;&quot;Fri, 04 Nov 2016 09:41:21 +0000&quot;}
+header: {&quot;To&quot;=&gt;&quot;YOUR_MAILADDRESS@gmail.com&quot;}
+header: {&quot;Subject&quot;=&gt;&quot;test&quot;}
+header: {&quot;User-Agent&quot;=&gt;&quot;Heirloom mailx 12.5 7/5/10&quot;}
+header: {&quot;MIME-Version&quot;=&gt;&quot;1.0&quot;}
+header: {&quot;Content-Type&quot;=&gt;&quot;text/plain; charset=us-ascii&quot;}
+header: {&quot;Content-Transfer-Encoding&quot;=&gt;&quot;7bit&quot;}
+body chunk; test
+myhostname: pmilter.local
+message_id: B6D5080AD79D
+reveive_time: Fri Nov 04 09:41:21 2016
+add_header(X-Pmilter:True): Enable
+hello pmilter handler called from pmilter
+client ipaddr 127.0.0.1
+client hostname pmilter.local
+client daemon pmilter.local
+handler phase name: mruby_connect_handler
+helo hostname: pmilter.local
+tls client issuer:
+tls client subject:
+tls session key size:
+tls encrypt method:
+tls version:
+env from from args: &lt;vagrant@pmilter.local&gt;
+env from from symval: vagrant@pmilter.local
+SASL login name:
+SASL login sender: vagrant@pmilter.local
+SASL login type:
+env to from arg: YOUR_MAILADDRESS@gmail.com
+env to from symval: YOUR_MAILADDRESS@gmail.com
+header: {&quot;Received&quot;=&gt;&quot;(from root@localhost)\n\tby pmilter.local (8.14.7/8.14.7/Submit) id uA49gxKT003138\n\tfor YOUR_MAILADDRESS@gmail.com; Fri, 4 Nov 2016 09:42:59 GMT&quot;}
+header: {&quot;From&quot;=&gt;&quot;vagrant &lt;vagrant@pmilter.local&gt;&quot;}
+header: {&quot;Message-Id&quot;=&gt;&quot;&lt;201611040942.uA49gxKT003138@pmilter.local&gt;&quot;}
+header: {&quot;Date&quot;=&gt;&quot;Fri, 04 Nov 2016 09:42:59 +0000&quot;}
+header: {&quot;To&quot;=&gt;&quot;YOUR_MAILADDRESS@gmail.com&quot;}
+header: {&quot;Subject&quot;=&gt;&quot;test&quot;}
+header: {&quot;User-Agent&quot;=&gt;&quot;Heirloom mailx 12.5 7/5/10&quot;}
+header: {&quot;MIME-Version&quot;=&gt;&quot;1.0&quot;}
+header: {&quot;Content-Type&quot;=&gt;&quot;text/plain; charset=us-ascii&quot;}
+header: {&quot;Content-Transfer-Encoding&quot;=&gt;&quot;7bit&quot;}
+body chunk; test
+myhostname: pmilter.local
+message_id: 34B2780AD79D
+reveive_time: Fri Nov 04 09:42:59 2016
+add_header(X-Pmilter:True): Enable
+</code></pre>
+
+<ul>
+<li>次回はこれらの情報からメールを制御してみる。</li>
+</ul>
+
       </article>
 
       <ul class="pager blog-pager">

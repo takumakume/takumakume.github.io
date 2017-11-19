@@ -8,6 +8,9 @@
   <title>mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコードを書く | takumakume pages</title>
   <meta property="og:title" content="mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコードを書く" />
   <meta name="twitter:title" content="mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコードを書く" />
+  <meta name="description" content="はじめに こんにちは。 GMOペパボの久米です。 今回はngx_mrubyやmod_mrubyで動作させるmrubyスクリプトのテストコードをii">
+  <meta property="og:description" content="はじめに こんにちは。 GMOペパボの久米です。 今回はngx_mrubyやmod_mrubyで動作させるmrubyスクリプトのテストコードをii">
+  <meta name="twitter:description" content="はじめに こんにちは。 GMOペパボの久米です。 今回はngx_mrubyやmod_mrubyで動作させるmrubyスクリプトのテストコードをii">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -185,6 +188,196 @@
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
         
+
+<h3 id="はじめに">はじめに</h3>
+
+<p>こんにちは。
+GMOペパボの久米です。
+今回は<a href="https://github.com/matsumoto-r/ngx_mruby">ngx_mruby</a>や<a href="https://github.com/matsumoto-r/mod_mruby">mod_mruby</a>で動作させるmrubyスクリプトのテストコードを<a href="https://github.com/iij/mruby-mtest">iij/mruby-mtest</a>を使って書いていきます。
+通常この場合のmrubyスクリプトはngx_mruby/mod_mruby上で動作しますが、今回は<a href="https://github.com/mruby/mruby">mruby</a>を単体でビルドして生成されたバイナリを使って動作させます。</p>
+
+<h3 id="環境構築">環境構築</h3>
+
+<h5 id="mrubyをgit-cloneする">mrubyをgit cloneする</h5>
+
+<pre><code class="language-sh">cd /usr/local/src
+git clone https://github.com/mruby/mruby.git
+cd mruby
+</code></pre>
+
+<h5 id="ビルドするmgemを設定する">ビルドするmgemを設定する</h5>
+
+<pre><code class="language-sh">mv build_config.rb build_config.rb.org
+vi build_config.rb
+</code></pre>
+
+<p>こちらに必要なmgemを設定します。
+今回は以下のようにしました。</p>
+
+<pre><code class="language-ruby">MRuby::Build.new do |conf|
+
+  toolchain :gcc
+
+  conf.gembox 'full-core'
+
+  conf.gem :github =&gt; 'iij/mruby-io'
+  conf.gem :github =&gt; 'iij/mruby-env'
+  conf.gem :github =&gt; 'iij/mruby-dir'
+  conf.gem :github =&gt; 'iij/mruby-digest'
+  conf.gem :github =&gt; 'iij/mruby-process'
+  conf.gem :github =&gt; 'iij/mruby-pack'
+  conf.gem :github =&gt; 'iij/mruby-socket'
+  conf.gem :github =&gt; 'matsumoto-r/mruby-sleep'
+  conf.gem :github =&gt; 'matsumoto-r/mruby-userdata'
+  conf.gem :github =&gt; 'matsumoto-r/mruby-uname'
+  conf.gem :github =&gt; 'matsumoto-r/mruby-mutex'
+  conf.gem :github =&gt; 'matsumoto-r/mruby-cache'
+  # 必要に応じてここにmgemを追記する。
+
+  conf.gem :github =&gt; 'iij/mruby-mtest'
+end
+</code></pre>
+
+<p>&ldquo;conf.gem :github =&gt; &lsquo;iij/mruby-mtest&rsquo;&rdquo; と書いているのがテスト用のmgemです。</p>
+
+<h5 id="ビルドする">ビルドする</h5>
+
+<pre><code class="language-sh">rake
+</code></pre>
+
+<h5 id="パスの通った場所に生成されたmrubyのバイナリを配置する">パスの通った場所に生成されたmrubyのバイナリを配置する</h5>
+
+<pre><code class="language-sh">cp -p mruby/bin/mruby /usr/local/bin/
+</code></pre>
+
+<p>動作確認</p>
+
+<pre><code class="language-sh">mruby --version
+</code></pre>
+
+<p>以下が表示される</p>
+
+<pre><code class="language-sh">mruby 1.2.0 (2015-11-17)
+</code></pre>
+
+<h3 id="テストコードを実装するサンプルプログラムを用意する">テストコードを実装するサンプルプログラムを用意する。</h3>
+
+<h5 id="mruby-rb">mruby.rb</h5>
+
+<pre><code class="language-ruby">#!mruby
+
+# 本番用コード
+class SampleClass
+  def initialize(request)
+    @r = request
+  end
+
+  def get_filename
+    @r.filename
+  end
+
+  def get_uri
+    @r.uri
+  end
+end
+</code></pre>
+
+<p>このSampleClassはhttpリクエストを受け取り、その内容を出力するためのメソッドが実装されているものです。</p>
+
+<h3 id="テストコードを実装する">テストコードを実装する</h3>
+
+<p>上記コードに対して、テスト時の処理を以下のように追記する。
+&ldquo;# &mdash;&rdquo; で囲っている部分がその箇所です。</p>
+
+<pre><code class="language-ruby">#!mruby
+
+# -----------------------------------
+# テスト用の初期化処理
+if Object.const_defined?(:MTest)
+  class Apache
+    class Request
+	  attr_accessor :filename, :uri
+	end
+  end
+end
+# -----------------------------------
+
+# 本番用コード
+class SampleClass
+  def initialize(request)
+    @r = request
+  end
+
+  def get_filename
+    @r.filename
+  end
+
+  def get_uri
+    @r.uri
+  end
+end
+
+# -----------------------------------
+# テストコード
+
+# テスト環境であれば実行
+if Object.const_defined?(:MTest)
+  class TestSampleClass &lt; MTest::Unit::TestCase
+    def setup
+  	  @filename = &quot;/var/www/html/test.php&quot;
+  	  @uri = &quot;http://127.0.0.1/test.php&quot;
+
+  	  @request = Apache::Request.new
+  	  @request.filename = @filename
+  	  @request.uri = @uri
+  	  @s = SampleClass.new @request
+  	end
+
+  	def test_get_filename
+  	  str = @s.get_filename
+  	  assert_equal(@filename, str)
+  	end
+
+  	def test_get_uri
+  	  str = @s.get_uri
+  	  assert_equal(@uri, str)
+  	end
+  end
+  MTest::Unit.new.run
+end
+# -----------------------------------
+</code></pre>
+
+<ul>
+<li><p>&ldquo;if Object.const_defined?(:MTest)&rdquo; の意味は、mrubyにmruby-mtestがビルドされているかを判断させています。mruby-mtestがビルドされているときのみ処理が実行されるため本番の環境でmruby-mtestを含めなければ本番で実行されることはありません。</p></li>
+
+<li><p>今回作ったmrubyにはmod_mrubyやngx_mrubyで用意されているライブラリを含めてビルドしていないため &ldquo;テスト用の初期化処理&rdquo; でテストで使うクラスを実装しています。</p>
+
+<ul>
+<li>もちろん、mrubyのビルド時にmod_mrubyやngx_mrubyのライブラリを &ldquo;build_config.rb&rdquo; 内で読み込ませれば必要ないです。</li>
+</ul></li>
+
+<li><p>&ldquo;def setup&rdquo; はテスト実行時に最初に実行される処理を記述します。今回はテストで使用するhttpリクエストを手動で作成しています。</p></li>
+
+<li><p>&ldquo;assert_equal(@filename, str)&rdquo; は &ldquo;str&rdquo; が &ldquo;@filename&rdquo; と同じであるべきとして定義しています。これに違反した場合はテストが失敗するということになります。</p></li>
+
+<li><p>&ldquo;MTest::Unit.new.run&rdquo; 最後にこれを実行してテストを行います。</p></li>
+</ul>
+
+<h3 id="テストを実行してみる">テストを実行してみる</h3>
+
+<pre><code class="language-sh">mruby mruby.rb
+</code></pre>
+
+<p>実行結果</p>
+
+<pre><code class="language-sh">Finished tests in 0.000592s, 3378.3784 tests/s, 3378.3784 assertions/s.
+
+2 tests, 2 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<p>これでmrubyもテストできるようになりました！</p>
+
       </article>
 
       <ul class="pager blog-pager">

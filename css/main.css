@@ -690,17 +690,11 @@ input.gsc-input, .gsc-input-box, .gsc-input-box-hover, .gsc-input-box-focus, .gs
 .links p > a {
   color: #27A822;
 }
-.post-preview .post-meta-tag {
-  text-align: center;
-  padding: 3px 5px 3px 8px;
+.post-preview .post-meta-tag > a {
+  padding: 3px;
   border-radius: 6px;
   background-color: #808080;
   color: #fff;
-  font-weight: bold;
-}
-.post-preview .post-meta-tag > a {
-  color: #fff;
-  font-weight: bold;
 }
 .social {
   margin-top: 30px;

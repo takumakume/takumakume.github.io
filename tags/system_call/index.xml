@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>System_call on takumakume pages</title>
+    <link>/tags/system_call/</link>
+    <description>Recent content in System_call on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 18 Jan 2017 00:00:00 +0900</lastBuildDate>
+    
+	<atom:link href="/tags/system_call/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Linuxのスレッド内でchrootした場合の影響範囲を調べた</title>
+      <link>/blog/2017-01-18-chroot/</link>
+      <pubDate>Wed, 18 Jan 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2017-01-18-chroot/</guid>
+      <description>今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc</description>
+    </item>
+    
+  </channel>
+</rss>

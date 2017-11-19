@@ -8,6 +8,9 @@
   <title>httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する | takumakume pages</title>
   <meta property="og:title" content="httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する" />
   <meta name="twitter:title" content="httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する" />
+  <meta name="description" content="はじめに こんばんは。GMOペパボの久米です。 以前、「CentOS6で ngx_mruby &#43; mruby-memcached &#43; mruby-mysql をインストールした。」という記事でプログラマブルに制御できるn">
+  <meta property="og:description" content="はじめに こんばんは。GMOペパボの久米です。 以前、「CentOS6で ngx_mruby &#43; mruby-memcached &#43; mruby-mysql をインストールした。」という記事でプログラマブルに制御できるn">
+  <meta name="twitter:description" content="はじめに こんばんは。GMOペパボの久米です。 以前、「CentOS6で ngx_mruby &#43; mruby-memcached &#43; mruby-mysql をインストールした。」という記事でプログラマブルに制御できるn">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -185,6 +188,125 @@
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
         
+
+<h3 id="はじめに">はじめに</h3>
+
+<p>こんばんは。GMOペパボの久米です。
+以前、「<a href="http://blog.konbu.link/2016/04/11/centos6%E3%81%A7-ngx_mruby-mruby_memcache-mruby_mysql-%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E3%81%97%E3%81%9F%E3%80%82/">CentOS6で ngx_mruby + mruby-memcached + mruby-mysql をインストールした。</a>」という記事でプログラマブルに制御できるnginxの紹介をし、リバースプロキシの構築を行いました。</p>
+
+<p>本エントリでは、同様にプログラマブルに制御できるWEBサーバとしてApacheに <a href="https://twitter.com/matsumotory">@matsumotory</a>さん が作成している、 <a href="https://github.com/matsumoto-r/mod_mruby">mod_mruby</a> というモジュールを組み込みたいと思います。</p>
+
+<p>これにより、<a href="https://github.com/matsumoto-r/ngx_mruby">ngx_mruby</a> 同様にmrubyを使って動的にWEBサーバの設定を変更することができます。</p>
+
+<h3 id="環境">環境</h3>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>バージョン</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>OS</td>
+<td>CentOS 6.6</td>
+</tr>
+
+<tr>
+<td>httpd</td>
+<td>2.2.15-54</td>
+</tr>
+
+<tr>
+<td>ruby</td>
+<td>1.9.3</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="必要なコンポーネント-ライブラリをインストール">必要なコンポーネント、ライブラリをインストール</h3>
+
+<pre><code class="language-sh">yum install -y httpd httpd-devel php git zlib zlib-devel pcre-devel bison openssl-devel readline-devel
+</code></pre>
+
+<h3 id="ruby-rbenv環境-をインストール">Ruby(rbenv環境)をインストール</h3>
+
+<h4 id="rbenv-ruby-buildをダウンロード">rbenv + ruby-buildをダウンロード</h4>
+
+<pre><code class="language-sh">git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+</code></pre>
+
+<h4 id="rbenvのpathの設定">rbenvのPATHの設定</h4>
+
+<pre><code class="language-sh">echo 'export PATH=&quot;$HOME/.rbenv/bin:$PATH&quot;' &gt;&gt; ~/.bash_profile
+echo 'eval &quot;$(rbenv init -)&quot;' &gt;&gt; ~/.bash_profile
+exec $SHELL -l
+</code></pre>
+
+<h4 id="rubyのバージョンを選択">rubyのバージョンを選択</h4>
+
+<ul>
+<li>今回は1.9.xの最新版を利用する。</li>
+</ul>
+
+<pre><code class="language-sh">rbenv install --list
+rbenv install 1.9.3-p551
+rbenv global 1.9.3-p551
+</code></pre>
+
+<h3 id="mod-mrubyのビルドに必要なrakeをインストール">mod_mrubyのビルドに必要なrakeをインストール</h3>
+
+<pre><code class="language-sh">rbenv exec gem install rake
+</code></pre>
+
+<h3 id="mod-mrubyをビルド">mod_mrubyをビルド</h3>
+
+<h4 id="ソースをダウンロード">ソースをダウンロード</h4>
+
+<pre><code class="language-sh">cd /usr/local/src
+git clone https://github.com/matsumoto-r/mod_mruby.git
+</code></pre>
+
+<h4 id="ビルド">ビルド</h4>
+
+<pre><code class="language-sh">cd mod_mruby
+sh ./test.sh
+sh ./build.sh
+</code></pre>
+
+<h3 id="httpdにmod-mrubyを組み込む">httpdにmod_mrubyを組み込む</h3>
+
+<pre><code class="language-sh">cp -p /usr/local/src/mod_mruby/src/.libs/mod_mruby.so /etc/httpd/modules/
+vi /etc/httpd/conf.d/mruby.conf
+</code></pre>
+
+<h5 id="mruby-conf">mruby.conf</h5>
+
+<pre><code class="language-sh">LoadModule mruby_module modules/mod_mruby.so
+&lt;Location /mruby-test&gt;
+    mrubyHandlerMiddle /etc/httpd/lib/test.rb
+&lt;/Location&gt;
+</code></pre>
+
+<h3 id="動作確認">動作確認</h3>
+
+<pre><code class="language-sh">mkdir /etc/httpd/lib
+cp -p /usr/local/src/mod_mruby/test/test.rb /etc/httpd/lib/
+service httpd start
+curl http://127.0.0.1/mruby-test
+</code></pre>
+
+<h5 id="実行結果">実行結果</h5>
+
+<pre><code class="language-sh">(snip)
+__Test Complete. Wellcome to mod_mruby world!!__
+</code></pre>
+
+<p>はろーーーmod_mruby!!!</p>
+
       </article>
 
       <ul class="pager blog-pager">

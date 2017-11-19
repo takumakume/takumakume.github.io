@@ -8,6 +8,9 @@
   <title>Linuxのスレッド内でchrootした場合の影響範囲を調べた | takumakume pages</title>
   <meta property="og:title" content="Linuxのスレッド内でchrootした場合の影響範囲を調べた" />
   <meta name="twitter:title" content="Linuxのスレッド内でchrootした場合の影響範囲を調べた" />
+  <meta name="description" content="今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc">
+  <meta property="og:description" content="今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc">
+  <meta name="twitter:description" content="今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -185,6 +188,252 @@
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
         
+
+<p>今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。
+本日は、Linuxのスレッド内でchrootした場合の影響範囲を調べたのでまとめる。</p>
+
+<h3 id="はじめに">はじめに</h3>
+
+<p>本エントリではLinuxでスレッドを作成して、システムコールの &ldquo;chroot()&rdquo; を実行した場合にスレッド内のみchrootされるのか？それとも、プロセス全体に影響するのかを調査していく。</p>
+
+<h3 id="実際に動かして確認する">実際に動かして確認する</h3>
+
+<h4 id="スレッドを作成して-chrootを実行するプログラムをc言語で作成する">スレッドを作成して、chrootを実行するプログラムをC言語で作成する。</h4>
+
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;string.h&gt;
+
+void* thread_1(void* param);
+void* thread_2(void* param);
+void* thread_3(void* param);
+void* set_chroot(char* path);
+void* show_files(char* path);
+
+int main(int argc, char *argv[]){
+  pthread_t thread_id_1, thread_id_2, thread_id_3;
+
+　show_files(&quot;/&quot;);
+
+  # スレッドを作って順番に実行していく
+  pthread_create(&amp;thread_id_1, NULL, thread_1, NULL);
+  pthread_join(thread_id_1,NULL);
+
+  pthread_create(&amp;thread_id_2, NULL, thread_2, NULL);
+  pthread_join(thread_id_2,NULL);
+
+  pthread_create(&amp;thread_id_3, NULL, thread_3, NULL);
+  pthread_join(thread_id_3,NULL);
+
+　show_files(&quot;/&quot;);
+  return 0;
+}
+
+void* thread_1(void* param){
+  show_files(&quot;/&quot;);
+}
+
+void* thread_2(void* param){
+  set_chroot(&quot;/tmp&quot;);
+  show_files(&quot;/&quot;);
+}
+
+void* thread_3(void* param){
+  show_files(&quot;/&quot;);
+}
+
+void* set_chroot(char* path){
+  printf(&quot;=== chroot ===\n&quot;);
+  if(chroot(path) &lt; 0){
+    printf(&quot;chroot(%d) %s\n&quot;, errno, strerror(errno));
+  }
+}
+
+void* show_files(char* path){
+  DIR *dir;
+  struct dirent *dp;
+
+  dir=opendir(path);
+  for(dp=readdir(dir); dp!=NULL; dp=readdir(dir)){
+    printf(&quot;%s\n&quot;, dp-&gt;d_name);
+  }
+  closedir(dir);
+}
+</code></pre>
+
+<p>上記の様にスレッドを作って、順番に処理させる。
+&ldquo;show_files()&rdquo; は指定したディレクトリの中身を表示するメソッドで、&rdquo;set_chroot()&rdquo; は指定したディレクトリをchrootに設定するメソッドです。
+以下のタイミングで &ldquo;show_files( / )&rdquo; でディレクトリ一覧を取得し、&rdquo;set_chroot( /tmp )&rdquo; を実行したタイミングでディレクトリ一覧が &ldquo;/tmp&rdquo; になるパターンを調べる。</p>
+
+<ul>
+<li>main関数実行直後</li>
+<li>スレッド1実行直後</li>
+<li>スレッド2実行直後</li>
+<li>スレッド3実行直後</li>
+<li>main関数終了直前</li>
+</ul>
+
+<p>&ldquo;touch /tmp/tmp_here&rdquo; を実行し、tmpディレクトリと分かるようにファイルを配置しておく。</p>
+
+<h5 id="結果">結果</h5>
+
+<pre><code>[root@pmilter thread]# gcc -lpthread kume.c &amp;&amp; ./a.out
+
+## main関数実行直後
+## =&gt; `/` が参照されている。
+
+.
+..
+boot
+dev
+proc
+run
+ :
+
+## スレッド1実行直後
+## =&gt; `/` が参照されている。
+
+.
+..
+boot
+dev
+proc
+run
+ :
+
+## スレッド2実行直後
+
+# chroot(&quot;/tmp&quot;)を実行
+=== chroot ===
+
+# =&gt; ここで、`/tmp` が参照されている。
+.
+..
+tmp_here
+
+## スレッド3実行直後
+## =&gt; 以降も `/tmp` が参照されている。
+
+.
+..
+tmp_here
+
+## main関数実行直後
+## =&gt; ここでも　`/tmp` が参照されている。
+
+.
+..
+tmp_here
+</code></pre>
+
+<p>結果としては、スレッド内で &ldquo;chroot()&rdquo; が実行されて以降は親プロセスを含めて全てにchrootが適応されていることが分かった。
+もちろん、main関数内でchrootした場合も同様だった。</p>
+
+<h4 id="なぜ-スレッド内でchrootした場合に-そのプロセス全体がchroot状態になるのか">なぜ、スレッド内でchrootした場合に、そのプロセス全体がchroot状態になるのか？</h4>
+
+<ul>
+<li><a href="https://github.com/torvalds/linux/blob/master/fs/open.c#L486-L517">chroot()</a>のソースを見てみる。</li>
+</ul>
+
+<pre><code class="language-c">SYSCALL_DEFINE1(chroot, const char __user *, filename)
+{
+	struct path path;
+	int error;
+	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
+retry:
+	error = user_path_at(AT_FDCWD, filename, lookup_flags, &amp;path);
+	if (error)
+		goto out;
+
+	error = inode_permission(path.dentry-&gt;d_inode, MAY_EXEC | MAY_CHDIR);
+	if (error)
+		goto dput_and_out;
+
+	error = -EPERM;
+	if (!ns_capable(current_user_ns(), CAP_SYS_CHROOT))
+		goto dput_and_out;
+	error = security_path_chroot(&amp;path);
+	if (error)
+		goto dput_and_out;
+
+	set_fs_root(current-&gt;fs, &amp;path);
+	error = 0;
+dput_and_out:
+	path_put(&amp;path);
+	if (retry_estale(error, lookup_flags)) {
+		lookup_flags |= LOOKUP_REVAL;
+		goto retry;
+	}
+out:
+	return error;
+}
+</code></pre>
+
+<p>&ldquo;set_fs_root(current-&gt;fs, &amp;path)&rdquo; このようにchrootを設定していることが分かる。</p>
+
+<ul>
+<li><a href="https://github.com/torvalds/linux/blob/5924bbecd0267d87c24110cbe2041b5075173a25/fs/fs_struct.c#L13-L26">set_fs_root()</a>のソースを見てみる。</li>
+</ul>
+
+<pre><code class="language-c">void set_fs_root(struct fs_struct *fs, const struct path *path)
+{
+	struct path old_root;
+
+	path_get(path);
+	spin_lock(&amp;fs-&gt;lock);
+	write_seqcount_begin(&amp;fs-&gt;seq);
+	old_root = fs-&gt;root;
+	fs-&gt;root = *path;
+	write_seqcount_end(&amp;fs-&gt;seq);
+	spin_unlock(&amp;fs-&gt;lock);
+	if (old_root.dentry)
+		path_put(&amp;old_root);
+}
+</code></pre>
+
+<p>&ldquo;fs-&gt;root = *path;&rdquo; このようにchrootされたディレクトリを格納していることが分かる。</p>
+
+<p><a href="https://github.com/torvalds/linux/blob/master/include/linux/sched.h#L1511">sched.h - struct task_struct</a></p>
+
+<p>上記にあった &ldquo;fs_struct&rdquo; 構造体は &ldquo;task_struct&rdquo; 構造体の中にリンクされている。</p>
+
+<pre><code class="language-c">struct task_struct {
+#ifdef CONFIG_THREAD_INFO_IN_TASK
+	/*
+	 * For reasons of header soup (see current_thread_info()), this
+	 * must be the first element of task_struct.
+	 */
+	struct thread_info thread_info;
+#endif
+	volatile long state;	/* -1 unrunnable, 0 runnable, &gt;0 stopped */
+	void *stack;
+  : (snip)
+  /* filesystem information */
+  struct fs_struct *fs;
+  : (snip)
+}
+</code></pre>
+
+<p>&ldquo;task_struct&rdquo; 構造体の中にはスレッドの情報が格納される、 &ldquo;thread_info&rdquo; が存在する。
+&ldquo;thread_info&rdquo; 構造体の中には、chrootされているpathを記録する &ldquo;fs_struct&rdquo; 構造体などは存在しない。</p>
+
+<h3 id="結論">結論</h3>
+
+<p>以下の事実を元にすると</p>
+
+<ul>
+<li>&ldquo;chroot()&rdquo; 実行後は親プロセスを含む全てのスレッドはchroot状態となる。</li>
+<li>&ldquo;chroot()&rdquo; 実行時は、 &ldquo;fs_stract&rdquo; 構造体の &ldquo;root&rdquo; にchrootのpathが記録される。</li>
+<li>&ldquo;fs_stract&rdquo; 構造体はプロセスの情報が格納される、&rdquo;task_struct&rdquo; 構造体にリンクされている。</li>
+<li>&ldquo;thread_info&rdquo; 構造体の中には、chrootされているpathを記録する &ldquo;fs_struct&rdquo; 構造体は存在しない。</li>
+</ul>
+
+<p>threadで&rdquo;chroot()&ldquo;を実行した場合もプロセスとして持っている &ldquo;fs_stract&rdquo; 構造体にchrootの情報を格納するため、
+&ldquo;chroot()&rdquo; 実行後は親プロセスを含む全てのスレッドはchroot状態となると思われる。</p>
+
       </article>
 
       <ul class="pager blog-pager">

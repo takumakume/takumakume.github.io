@@ -8,6 +8,9 @@
   <title>mod_mrubyを使ってリクエスト毎のCPU使用時間に応じたアクセス制限を行う | takumakume pages</title>
   <meta property="og:title" content="mod_mrubyを使ってリクエスト毎のCPU使用時間に応じたアクセス制限を行う" />
   <meta name="twitter:title" content="mod_mrubyを使ってリクエスト毎のCPU使用時間に応じたアクセス制限を行う" />
+  <meta name="description" content="はじめに お久しぶりです。 ペパボの久米です。 本日はmrubyを利用したWEBサーバのCPU使用率を元にしたアクセス制御例をご紹介します。 具体的">
+  <meta property="og:description" content="はじめに お久しぶりです。 ペパボの久米です。 本日はmrubyを利用したWEBサーバのCPU使用率を元にしたアクセス制御例をご紹介します。 具体的">
+  <meta name="twitter:description" content="はじめに お久しぶりです。 ペパボの久米です。 本日はmrubyを利用したWEBサーバのCPU使用率を元にしたアクセス制御例をご紹介します。 具体的">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -185,6 +188,229 @@
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
         
+
+<h3 id="はじめに">はじめに</h3>
+
+<p>お久しぶりです。
+ペパボの久米です。
+本日はmrubyを利用したWEBサーバのCPU使用率を元にしたアクセス制御例をご紹介します。</p>
+
+<p>具体的には以下のような制御を行いたい。</p>
+
+<p><img src="http://blog.konbu.link/wp-content/uploads/2017/04/ru_limit.001-1024x768.jpeg" alt="" width="750" height="563" class="alignnone size-large wp-image-372" /></p>
+
+<ul>
+<li>複数ドメイン環境下において、リクエスト毎に使われるCPU使用時間を元にサーバの負荷が高い場合にvhost単位の制限を行う。
+
+<ul>
+<li>サーバの負荷の判断はLoadAveを元に行う。</li>
+<li>CPU使用時間はリクエスト開始から処理終了までの合計が必要なので、判定に使うCPU時間は前回のリクエストの情報を使う。</li>
+</ul></li>
+</ul>
+
+<h3 id="実装にあたって使用する主なソフトウェア">実装にあたって使用する主なソフトウェア</h3>
+
+<ul>
+<li><a href="https://github.com/matsumotory/mod_mruby">mod_mruby</a> を導入した Apache (本エントリの内容は、おそらく <a href="https://github.com/matsumotory/ngx_mruby">ngx_mruby</a> でも動作する)
+
+<ul>
+<li>詳しくは過去のエントリを御覧ください。 (<a href="http://blog.konbu.link/2016/07/26/mod-mruby-install/">httpd + mod_mrubyでプログラマブルなWEBサーバを構築する</a>)</li>
+</ul></li>
+<li><a href="https://github.com/harasou/mruby-resource">mruby-resource</a>
+
+<ul>
+<li>今回は <code>getrusage(2)</code> の機能を利用した、CPU使用時間の取得を行うために利用します。</li>
+</ul></li>
+</ul>
+
+<h3 id="実装">実装</h3>
+
+<p><strong>本エントリでは httpd2.2 + mod_mrubyを用いて行います。</strong></p>
+
+<h4 id="事前準備">事前準備</h4>
+
+<ul>
+<li>mod_mrubyのbuildはbuild_config.rbに以下のような追加をしてビルドしておく。</li>
+</ul>
+
+<pre><code class="language-diff">--- /usr/local/src/mod_mruby/build_config.rb.orig	2017-04-04 10:15:31.152370251 +0000
++++ /usr/local/src/mod_mruby/build_config.rb	2017-04-04 10:16:15.034296969 +0000
+@@ -43,6 +43,8 @@
+   # conf.gem :github =&gt; 'matsumoto-r/mruby-capability'
+   # conf.gem :github =&gt; 'matsumoto-r/mruby-cgroup'
+
++  conf.gem :github =&gt; 'harasou/mruby-resource'
++
+   # C compiler settings
+   conf.cc do |cc|
+     if ENV['BUILD_TYPE'] == &quot;debug&quot;
+</code></pre>
+
+<h4 id="メイン実装">メイン実装</h4>
+
+<h5 id="httpd-conf">httpd.conf</h5>
+
+<p>以下の内容を追加する。</p>
+
+<pre><code>LoadModule mruby_module modules/mod_mruby.so
+
+&lt;IfModule mod_mruby.c&gt;
+  mrubyPostConfigMiddle        /etc/httpd/conf.d/mruby/init.rb cache
+  &lt;FilesMatch ^.*\.php$&gt;
+    mrubyAccessCheckerMiddle   /etc/httpd/conf.d/mruby/begin.rb cache
+    mrubyLogTransactionMiddle  /etc/httpd/conf.d/mruby/end.rb cache
+  &lt;/FilesMatch&gt;
+&lt;/IfModule&gt;
+</code></pre>
+
+<h5 id="init-rb">init.rb</h5>
+
+<ul>
+<li>プロセス起動時に1度だけ実行される。</li>
+<li>各リクエストで利用するcacheやmutexを作成して、Userdataに格納し各Workerから参照できるようにする。(都度初期化するより大幅にパフォーマンス向上する)</li>
+<li>Userdata.new.shared_cache
+
+<ul>
+<li>vhost毎に最後のリクエスト終了後のCPU使用時間を保持する。</li>
+</ul></li>
+<li>Userdata.new.shared_mutex
+
+<ul>
+<li>処理の最後に上記Cacheに書き込む際の競合を防止する。</li>
+</ul></li>
+</ul>
+
+<pre><code class="language-ruby">Server = get_server_class
+
+begin
+  Userdata.new.shared_cache = Cache.new :namespace =&gt; &quot;resource-limiter&quot;
+rescue =&gt; e
+  raise &quot;localmemcache init failed on #{__LINE__}: #{e}&quot;
+end
+
+begin
+  Userdata.new.shared_mutex = Mutex.new :global =&gt; true
+rescue =&gt; e
+  raise &quot;mutex init failed on #{__LINE__}: #{e}&quot;
+end
+</code></pre>
+
+<h5 id="begin-rb">begin.rb</h5>
+
+<ul>
+<li>リクエスト毎に最初に実行される。</li>
+<li>LoadAvgが一定以上であれば以下のことをする。
+
+<ul>
+<li>最後のリクエスト終了時点のCPU使用時間が一定を超えていれば503エラーを返す。</li>
+<li>それ以外は通常の処理を行う。</li>
+</ul></li>
+</ul>
+
+<pre><code class="language-ruby">LOADAVG_THRESHOLD = 50
+RU_UTIME_LIMIT    = 20
+
+Server = get_server_class
+
+# get this server loadavg for 3 min
+loadavg = IO.read('/proc/loadavg').split(' ')[0].to_f
+
+vhost = Server::Request.new.hostname
+
+if loadavg &gt; LOADAVG_THRESHOLD
+  Server.errlogger Server::LOG_INFO, &quot;loadavg is over threshold. LOADAVG_THRESHOLD:#{LOADAVG_THRESHOLD} loadavg:#{loadavg} hostname:#{vhost}&quot;
+  begin
+    cache = Userdata.new.shared_cache
+    last_ru_utime = cache[vhost].to_f
+    if last_ru_utime &gt; RU_UTIME_LIMIT
+      Server.errlogger Server::LOG_INFO, &quot;ru_utime is over limit (return 503). limit:#{RU_UTIME_LIMIT} last_ru_utime:#{last_ru_utime} hostname:#{vhost}&quot;
+      Server.return Server::HTTP_SERVICE_UNAVAILABLE
+    else
+      Server.return Server::DECLINED
+    end
+  rescue =&gt; e
+    Server.errlogger Server::LOG_ERROR &quot;failed on #{__LINE__}: #{e}&quot;
+    Server.return Server::DECLINED
+  end
+else
+  Server.errlogger Server::LOG_INFO, &quot;loadavg not over threshold. skip... LOADAVG_THRESHOLD:#{LOADAVG_THRESHOLD} loadavg:#{loadavg} hostname:#{vhost}&quot;
+  Server.return Server::DECLINED
+end
+</code></pre>
+
+<h5 id="end-rb">end.rb</h5>
+
+<ul>
+<li>コンテンツ処理、レスポンスが終了した時に実行される。</li>
+<li>CPU使用時間をvhostをキーに記録します。</li>
+<li>getrusage(RUSAGE_SELF)
+
+<ul>
+<li>mruby-resourceを用いてgetrusageを実行します。</li>
+<li>ru_utime = rusage[:ru_utime]</li>
+<li>使用されたユーザCPUの時間を取得します。</li>
+</ul></li>
+</ul>
+
+<pre><code class="language-ruby">include Resource
+
+Server = get_server_class
+
+cache = Userdata.new.shared_cache
+mutex = Userdata.new.shared_mutex
+vhost = Server::Request.new.hostname
+
+rusage = getrusage(RUSAGE_SELF)
+ru_utime = rusage[:ru_utime]
+
+timeout = mutex.try_lock_loop(50000) do
+  begin
+    cache[vhost] = ru_utime.to_s
+    Server.errlogger Server::LOG_INFO, &quot;Recorded ru_utime. ru_utime:#{ru_utime} hostname:#{vhost}&quot;
+  rescue =&gt; e
+    raise &quot;failed on #{__LINE__}: #{e}&quot;
+  ensure
+    mutex.unlock
+  end
+end
+if timeout
+  Server.errlogger Server::LOG_WARNING, &quot;Get timeout lock mutex&quot;
+end
+</code></pre>
+
+<h3 id="実行結果">実行結果</h3>
+
+<ul>
+<li>テストのため閾値を大幅に下げます。(begin.rb)</li>
+</ul>
+
+<pre><code class="language-ruby">#LOADAVG_THRESHOLD = 50
+LOADAVG_THRESHOLD = 0.001
+#RU_UTIME_LIMIT    = 20
+RU_UTIME_LIMIT    = 0.001
+</code></pre>
+
+<ul>
+<li>負荷が低い時</li>
+</ul>
+
+<pre><code># curl http://hoge.local/index.php =&gt; 通常表示
+[Tue Apr 04 23:54:11 2017] [info] loadavg not over threshold. skip... LOADAVG_THRESHOLD:0.001 loadavg:0 hostname:hoge.local
+[Tue Apr 04 23:54:11 2017] [info] Recorded ru_utime. ru_utime:0.005999 hostname:hoge.local
+</code></pre>
+
+<ul>
+<li>負荷が高い時</li>
+</ul>
+
+<pre><code># curl http://hoge.local/index.php =&gt; 503エラー
+[Tue Apr 04 23:54:34 2017] [info] loadavg is over threshold. LOADAVG_THRESHOLD:0.001 loadavg:0.06 hostname:hoge.local
+[Tue Apr 04 23:54:34 2017] [info] ru_utime is over limit (return 503). limit:0.001 last_ru_utime:0.010998 hostname:hoge.local
+[Tue Apr 04 23:54:34 2017] [info] Recorded ru_utime. ru_utime:0.007998 hostname:hoge.local
+</code></pre>
+
+<p>このように指定したCPU使用時間を超えた場合にエラーを返すことができました。</p>
+
       </article>
 
       <ul class="pager blog-pager">
