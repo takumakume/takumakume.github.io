@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Blogs on takumakume pages</title>
-    <link>/blog/</link>
-    <description>Recent content in Blogs on takumakume pages</description>
+    <title>Blog on takumakume pages</title>
+    <link>/tags/blog/</link>
+    <description>Recent content in Blog on takumakume pages</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Sat, 18 Nov 2017 23:27:31 +0900</lastBuildDate>
     
-	<atom:link href="/blog/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="/tags/blog/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
