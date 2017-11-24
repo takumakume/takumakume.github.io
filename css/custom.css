@@ -1,0 +1,43 @@
+body {
+  font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+.container {
+  width: 100%;
+}
+.navbar-header {
+  width: 100%;
+}
+.blog-post a {
+  color: #27A822;
+}
+.links {
+  text-align: center;
+}
+.links p {
+  font-weight: bold;
+  font-size: 30px;
+}
+.links p > a {
+  color: #27A822;
+}
+.post-preview .post-meta-tag > a {
+  padding: 3px;
+  border-radius: 6px;
+  background-color: #808080;
+  color: #fff;
+}
+.social {
+  margin-top: 30px;
+}
+.fb_iframe_widget > span {
+	vertical-align: baseline !important;
+}
+.pocket-btn {
+    display: inline-block;
+    height: 20px;
+    overflow: hidden;
+}
+.pocket-btn iframe {
+    width: 100px !important;
+    overflow: hidden;
+}
