@@ -3,6 +3,11 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>/blog/2017-12-18-ebpf-getting-started/</loc>
+    <lastmod>2017-12-18T23:27:31+09:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/blog/2017-11-18-new-blog/</loc>
     <lastmod>2017-11-18T23:27:31+09:00</lastmod>
   </url>
@@ -105,7 +110,13 @@
   
   <url>
     <loc>/blog/</loc>
-    <lastmod>2017-11-18T23:27:31+09:00</lastmod>
+    <lastmod>2017-12-18T23:27:31+09:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>/tags/bpf/</loc>
+    <lastmod>2017-12-18T23:27:31+09:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -122,7 +133,7 @@
   
   <url>
     <loc>/tags/linux/</loc>
-    <lastmod>2017-01-18T00:00:00+09:00</lastmod>
+    <lastmod>2017-12-18T23:27:31+09:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -164,7 +175,7 @@
   
   <url>
     <loc>/</loc>
-    <lastmod>2017-11-18T23:27:31+09:00</lastmod>
+    <lastmod>2017-12-18T23:27:31+09:00</lastmod>
     <priority>0</priority>
   </url>
   

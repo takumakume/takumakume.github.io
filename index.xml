@@ -5,10 +5,19 @@
     <link>/</link>
     <description>Recent content on takumakume pages</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sat, 18 Nov 2017 23:27:31 +0900</lastBuildDate>
+    <lastBuildDate>Mon, 18 Dec 2017 23:27:31 +0900</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>eBPF入門についてKixs vol.006で登壇した</title>
+      <link>/blog/2017-12-18-ebpf-getting-started/</link>
+      <pubDate>Mon, 18 Dec 2017 23:27:31 +0900</pubDate>
+      
+      <guid>/blog/2017-12-18-ebpf-getting-started/</guid>
+      <description>GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「 eBPF入門」というタイトルで登壇してきました</description>
+    </item>
     
     <item>
       <title>ブログ引っ越しました！</title>
@@ -160,7 +169,7 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/about/</guid>
-      <description>Takuma Kume  Infra engineer @GMO Pepabo, Inc linux/mruby/ngx_mruby/mod_mruby  History  2002年 北九州市ロボカップ会 入会  チーム: デザイナーズ 2006年 ロボカップジュニアジャパンオープン大会 サッカーチャレンジ プライマリ部門 1位 2006年 ロボカップジュニアブレーメン世界大会 サッカーチャレンジ プライマリ部門 1位  2010年 九州通信ネットワーク株式会社(現 株式会社QTnet) 入社  Web, DNSサーバの構築、ネットワークの構築 プリセールスエンジニア、Windows Server、VMwareを用いたハイパーバイザ・ストレージ構築  2016年 GMOペパボ株式会社 入社  Slides 2017  12&amp;frasl;16 Kixs Vol.004  eBPF入門  11&amp;frasl;18 第10回ペパボテックカンファレンス  Webサーバ拡張における排他制御のパフォーマンスチューニング  10&amp;frasl;08 ペパボ・はてな技術大会, 9&amp;frasl;30 Hosting Casual Talk 4  ホスティングにおける安定運用のためのアクセスコントロール手法  4&amp;frasl;26 ホスティング Tech MTG  MHAでデータベースの運用を楽にしよう！   2016  10&amp;frasl;29 GMO Hosting conference, 12&amp;frasl;2 Kixs Vol.</description>
+      <description>Takuma Kume  2010年 九州通信ネットワーク株式会社(現 株式会社QTnet) 入社  Web, DNSサーバの構築、ネットワークの構築 プリセールスエンジニア、Windows Server、VMwareを用いたハイパーバイザ・ストレージ構築  2016年 GMOペパボ株式会社 入社  Slides 2017  12&amp;frasl;16 Kixs Vol.004  eBPF入門  11&amp;frasl;18 第10回ペパボテックカンファレンス  Webサーバ拡張における排他制御のパフォーマンスチューニング  10&amp;frasl;08 ペパボ・はてな技術大会, 9&amp;frasl;30 Hosting Casual Talk 4  ホスティングにおける安定運用のためのアクセスコントロール手法  4&amp;frasl;26 ホスティング Tech MTG  MHAでデータベースの運用を楽にしよう！   2016  10&amp;frasl;29 GMO Hosting conference, 12&amp;frasl;2 Kixs Vol.002 ホスティングにおける柔軟なアクセス制御の必要性とその実装  2013  7&amp;frasl;18 DNS Summer Days 2013  児童ポルノブロッキングの実装と運用自動化   .</description>
     </item>
     
   </channel>
