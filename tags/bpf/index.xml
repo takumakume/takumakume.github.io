@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bpf on takumakume pages</title>
+    <link>/tags/bpf/</link>
+    <description>Recent content in Bpf on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 18 Dec 2017 00:00:00 +0900</lastBuildDate>
+    
+	<atom:link href="/tags/bpf/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>eBPF入門についてKixs vol.006で登壇した</title>
+      <link>/blog/2017-12-18-ebpf-getting-started/</link>
+      <pubDate>Mon, 18 Dec 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2017-12-18-ebpf-getting-started/</guid>
+      <description>GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の</description>
+    </item>
+    
+  </channel>
+</rss>
