@@ -3,6 +3,11 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>/blog/2018-05-02-ngx_mruby_v2/</loc>
+    <lastmod>2018-05-02T09:54:10+09:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/blog/2017-12-18-ebpf-getting-started/</loc>
     <lastmod>2017-12-18T00:00:00+09:00</lastmod>
   </url>
@@ -105,7 +110,7 @@
   
   <url>
     <loc>/blog/</loc>
-    <lastmod>2017-12-18T00:00:00+09:00</lastmod>
+    <lastmod>2018-05-02T09:54:10+09:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -146,7 +151,7 @@
   
   <url>
     <loc>/tags/ngx_mruby/</loc>
-    <lastmod>2016-07-15T00:00:00+09:00</lastmod>
+    <lastmod>2018-05-02T09:54:10+09:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -170,7 +175,7 @@
   
   <url>
     <loc>/</loc>
-    <lastmod>2017-12-18T00:00:00+09:00</lastmod>
+    <lastmod>2018-05-02T09:54:10+09:00</lastmod>
     <priority>0</priority>
   </url>
   

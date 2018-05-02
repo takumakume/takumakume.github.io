@@ -5,12 +5,12 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
-  <title>eBPF入門についてKixs vol.006で登壇した | takumakume pages</title>
-  <meta property="og:title" content="eBPF入門についてKixs vol.006で登壇した" />
-  <meta name="twitter:title" content="eBPF入門についてKixs vol.006で登壇した" />
-  <meta name="description" content="GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の">
-  <meta property="og:description" content="GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の">
-  <meta name="twitter:description" content="GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の">
+  <title>ngx_mruby v2 の新機能を見る | takumakume pages</title>
+  <meta property="og:title" content="ngx_mruby v2 の新機能を見る" />
+  <meta name="twitter:title" content="ngx_mruby v2 の新機能を見る" />
+  <meta name="description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 ngx_mrubyのv2-devブラ">
+  <meta property="og:description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 ngx_mrubyのv2-devブラ">
+  <meta name="twitter:description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 ngx_mrubyのv2-devブラ">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -21,7 +21,7 @@
 
 
   <meta name="generator" content="Hugo 0.37.1" />
-  <link rel="canonical" href="/blog/2017-12-18-ebpf-getting-started/" />
+  <link rel="canonical" href="/blog/2018-05-02-ngx_mruby_v2/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
@@ -168,7 +168,7 @@ ga('send', 'pageview');
         <div class="row">
           <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
             <div class="blog-heading">
-              <h1>eBPF入門についてKixs vol.006で登壇した</h1>
+              <h1>ngx_mruby v2 の新機能を見る</h1>
                 
                 
             </div>
@@ -194,145 +194,100 @@ ga('send', 'pageview');
       <article role="main" class="blog-post">
         
 
-<p><a href="https://qiita.com/advent-calendar/2017/pepabo">GMOペパボ Advent Calendar 2017</a> の18日目の記事です。</p>
+<p><a href="https://twitter.com/matsumotory">@matsumotory</a> さんが <a href="https://github.com/matsumotory/ngx_mruby">ngx_mruby</a> の <a href="https://github.com/matsumotory/ngx_mruby/tree/v2-dev">v2-dev</a> を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。</p>
 
-<p><a href="https://kixs.connpass.com/event/69643/">九州インフラ交流勉強会(Kixs) Vol.006</a> というイベントで「eBPF入門」というタイトルで登壇した。
-当日のスライドは以下。</p>
-
-<script async class="speakerdeck-embed" data-id="863e9f0eb2a64ac3bbb00f09ff5250bf" data-ratio="1.77777777777778" src="//speakerdeck.com/assets/embed.js"></script>
-
-<p><code>BPF</code> とは <u>B</u>erkeley <u>P</u>acket <u>F</u>ilter の略で、 <code>tcpdump(1)</code> や <code>seccomp(2)</code> などに使われていてパケットやシステムコールのフィルタリングをするためのインターフェイスとして利用されている。
-仕組みとしては、 Userspace で 作成した Bytecode を Kernel 内部で実行することでそれらを実現している。スライドにて図解しているのでぜひご覧いただければと思います。</p>
-
-<p>今回のスライドは「eBPF(<u>E</u>xtended <u>B</u>erkeley <u>P</u>acket <u>F</u>ilter)入門」ということで拡張されたBPFの機能の一部や仕組みについてを触れています。</p>
-
-<p>本エントリでは、学習の背景や調査した内容と今後のやっていきについて書く。</p>
-
-<h2 id="ebpfを学習するに至った背景">eBPFを学習するに至った背景</h2>
-
-<p>仕事で大規模ホスティング環境の運用を行っていく中で、お客様にお貸ししている共有サーバが高負荷状態になるがその原因が掴みづらい問題がしばしば発生していた。</p>
-
-<p>10月にGMOペパボにて開催された、<a href="https://pepabo.connpass.com/event/65932/">ペパボ・はてな技術大会@福岡</a> で <a href="https://speakerdeck.com/takumakume/hosuteinguniokeruan-ding-yun-yong-falsetamefalseakusesukontororushou-fa">ホスティングにおける安定運用のためのアクセスコントロール手法</a> というタイトルで登壇した日のこと。</p>
-
-<p>イベント後の懇親会で、ホスティングの高負荷原因が掴みづらいという話をしていたところ、はてなの <a href="https://twitter.com/yoyogidesaiz">@yoyogidesaiz</a> さんより <code>eBPF</code> の存在を教えていただいたことが始まりだった。</p>
-
-<h2 id="bpfについて学習">BPFについて学習</h2>
-
-<p>当初、 <code>BPF</code> について全く知見がなく <code>tcpdump(1)</code> に使われていることすら知らない状況だった。まずはBPFについて知ることが必要だったため以下を参考にした。</p>
-
-<ul>
-<li>BPF
-
-<ul>
-<li><a href="http://www.tcpdump.org/papers/bpf-usenix93.pdf">The BSD Packet Filter: A New Architecture for User-level Packet Capture</a></li>
-</ul></li>
-<li>tcpdump
-
-<ul>
-<li><a href="https://sharkfestus.wireshark.org/sharkfest.11/presentations/McCanne-Sharkfest'11_Keynote_Address.pdf">libpcap: An Architecture and Op2miza2on Methodology for Packet Capture</a></li>
-</ul></li>
-<li>seccomp
-
-<ul>
-<li><a href="http://udzura.hatenablog.jp/entry/2016/11/18/160020">seccompをmrubyで試す</a></li>
-</ul></li>
-</ul>
-
-<h2 id="ebpfについて学習">eBPFについて学習</h2>
-
-<p>まずは、 eBPF が ClassicBPF(以下cBPF) に比べて何が違うのか、既存の手法に比べて何が優位なのか、何ができそうかを調べていった。
-調査をしていくと eBPF は日本語の情報があまりなく、 Brendan Gregg 氏が多くの情報を公開してくださっていたためその付近を調べた。</p>
-
-<ul>
-<li><a href="https://www.slideshare.net/brendangregg/bpf-tracing-and-more">BPF: Tracing and more</a></li>
-<li><a href="http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html">eBPF: One Small Step</a></li>
-</ul>
-
-<p>Kernelのヘッダファイルを確認すると、<a href="https://github.com/torvalds/linux/blob/v4.14/include/trace/events/bpf.h#L12">この</a>のように多くのことができるようだった。</p>
-
-<pre><code class="language-c">#define __PROG_TYPE_MAP(FN)	\
-	FN(SOCKET_FILTER)	\
-	FN(KPROBE)		\
-	FN(SCHED_CLS)		\
-	FN(SCHED_ACT)		\
-	FN(TRACEPOINT)		\
-	FN(XDP)			\
-	FN(PERF_EVENT)		\
-	FN(CGROUP_SKB)		\
-	FN(CGROUP_SOCK)		\
-	FN(LWT_IN)		\
-	FN(LWT_OUT)		\
-	FN(LWT_XMIT)
-</code></pre>
-
-<p>今回は、イメージが付きやすかった、Linux Kernelのトレース <code>KPROBE</code> と、パケットの制御 <code>XDP</code> に絞って調査することにした。</p>
-
-<p>また、eBPFを利用したツール郡として <a href="https://github.com/iovisor/bcc">iovisor/bcc</a> というPythonのバインディング実装があったためソースコードを参考にした。
-Linux Kernel にも多くの <a href="https://github.com/torvalds/linux/tree/v4.14/samples/bpf">サンプルコード</a> が同梱されていて、動作イメージを想像しやすかった。</p>
-
-<blockquote>
-<p>まずは、 eBPF が ClassicBPF(以下cBPF) に比べて何が違うのか、既存の手法に比べて何が優位なのか、何ができそうかを調べていった。</p>
-</blockquote>
-
-<p>上記についてはスライドを是非ご覧ください。</p>
-
-<h3 id="余談-トレースといえば-strace-1-じゃん">【余談】トレースといえば <code>strace(1)</code> じゃん！</h3>
-
-<p>とか思って、 <code>strace(1)</code> の仕組みを調べてみたけどBPFとは関係なかった。せっかく動作内容を調べたのでここに貼っておく。</p>
-
-<p><img src="/img/2017-12-18/strace.png" alt="strace" /></p>
-
-<p><code>ptrace(2)</code> というシステムコールがあり、解析対象プロセスにattachすることができる。
-attach先はシステムコールを実行してから解析が終わるまでの間は瞬間的にプロセスが停止するようだった。</p>
-
-<h2 id="既存の技術についても学習機会が多かった">既存の技術についても学習機会が多かった</h2>
-
-<p>今回学習した範囲は、kprobeやuprobeを使った動的トレースや、XDPというパケット制御だった。</p>
-
-<blockquote>
-<p>kprobeやuprobeを使った動的トレース</p>
-</blockquote>
-
-<p>こちらについては、そもそも <code>kprobe</code> 自体ほとんど知らなかったので、存在や仕組みを知ることができた。</p>
-
-<blockquote>
-<p>XDPというパケット制御</p>
-</blockquote>
-
-<p>こちらについては、連想されるものとして <code>iptables</code> や <code>cBPF</code> があるが、eBPFがどう優れているかを調査するとおのずとその仕組みを学ぶことになるので非常に有意義だった。</p>
-
-<h2 id="発表後のフィードバックから得られたこと">発表後のフィードバックから得られたこと</h2>
-
-<p>例えば、KernelやUserspaceの動的トレースとしては <code>systemtap</code> など色々なツールがある。
-調査当初ちらちらと見ていたが詳しいところが分かっていないのでeBPFがどこまで有用なのか判断がつかない場面があった。</p>
-
-<p>これまで、あまり触れてこなかった既存のツールの仕組みやできることを把握していかねばならないと感じている。</p>
-
-<p>既存のツール郡とコンポーネントのマッピングについては、 Brendan Gregg 氏の以下のツイートが参考になりそうなので今後学習していく。</p>
-
-<p><blockquote class="twitter-tweet" data-lang="ja"><p lang="en" dir="ltr">updated Linux tools diagram (PNG &amp; SVG) with recent bcc additions <a href="https://t.co/tMyCAxSzAS">https://t.co/tMyCAxSzAS</a> <a href="https://t.co/ek5CMy3oUU">pic.twitter.com/ek5CMy3oUU</a></p>&mdash; Brendan Gregg (@brendangregg) <a href="https://twitter.com/brendangregg/status/789923778960633856?ref_src=twsrc%5Etfw">2016年10月22日</a></blockquote>
+<p><blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">ngx_mrubyのv2-devブランチ、ノンブロックsleepとか実装済みなので、ノンブロックなメソッドと組み合わせて自前イベントループとか作れると思うので是非お試しください。さらにはRubyのスクリプトはfiberで実行されるように大きく変更したので何か問題があればissueにして頂けるとこれまた幸いです。</p>&mdash; 松本 亮介 / まつもとりー (@matsumotory) <a href="https://twitter.com/matsumotory/status/991357435930558464?ref_src=twsrc%5Etfw">2018年5月1日</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
 
-<h3 id="今後について">今後について</h3>
+<p>機能としては、大きく以下のような追加になるとのこと。</p>
 
 <ul>
-<li>eBPFについては、まだまだ触り部分しか触れていないので継続して調べていく。</li>
-<li>eBPFの有用性について、既存の技術を理解した上で語れるようになること。</li>
-<li>eBPFを仕事に活かしていく時に、どういった課題を解決できるか検討すること。この内容については、12/23の <a href="http://websystemarchitecture.hatenablog.jp/entry/2017/11/16/182041">Web System Architecture研究会</a> で発表したいと考えている。</li>
+<li><code>return</code> の実装</li>
+<li><code>Nginx::Async.sleep</code> の実装</li>
+<li>ノンブロッキングなhttpクライアントの実装（comming soon）</li>
 </ul>
+
+<p>本エントリでは、それぞれの機能について見ていく。</p>
+
+<h3 id="return-の実装"><code>return</code> の実装</h3>
+
+<p>これまで以下のようなコードは、初見だと意図しない挙動をする。</p>
+
+<pre><code class="language-rb">Nginx.echo &quot;OK&quot;
+Nginx.return Nginx::DECLINED  # ここでプログラムからreturnすると思いがち
+Nginx.echo &quot;NG&quot;
+# =&gt; &quot;OKNG&quot;
+</code></pre>
+
+<p>対応方法として、以下のようにLambdaで記述していた。</p>
+
+<pre><code class="language-rb">Nginx.return -&gt; do
+  Nginx.echo &quot;OK&quot;
+  return Nginx::DECLINED
+  Nginx.echo &quot;NG&quot;
+end
+# =&gt; &quot;OK&quot;
+</code></pre>
+
+<p>v2からは以下のように記述可能</p>
+
+<pre><code class="language-rb">Nginx.echo &quot;OK&quot;
+Nginx.return Nginx::DECLINED
+return
+Nginx.echo &quot;NG&quot;
+# =&gt; &quot;OK&quot;
+</code></pre>
+
+<h3 id="nginx-async-sleep-の実装"><code>Nginx::Async.sleep</code> の実装</h3>
+
+<p>ノンブロッキングsleepの実装。1 nginx workerプロセスの動きを説明する。</p>
+
+<ul>
+<li>これまでのngx_mruby</li>
+</ul>
+
+<p><img src="/img/2018-05-02/blocking.png" alt="image" /></p>
+
+<ul>
+<li>v2のngx_mruby</li>
+</ul>
+
+<p><img src="/img/2018-05-02/non_blocking.png" alt="image" /></p>
+
+<p>このように、処理ができる。
+つまり、何か重い処理やや外部コマンドを実行するようなときにsleepさせて別の処理を実行するということが可能となる。</p>
+
+<p>実際の実装や動作については、以下が非常に参考になる。</p>
+
+<ul>
+<li><a href="http://hb.matsumoto-r.jp/entry/2018/02/22/000546">HTTPリクエスト単位でmrubyのバイトコードをProcとFiberで包みなおして実行した場合の性能とv2について</a></li>
+</ul>
+
+<p>ノンブロッキングについては、以下の記事が非常に参考になった。</p>
+
+<ul>
+<li><a href="http://keens.github.io/blog/2017/05/19/hidoukitononburokkingutoatonanika/">非同期とノンブロッキングとあと何か - κeenのHappy Hacκing Blog</a></li>
+<li><a href="http://blog.matsumoto-r.jp/?p=2030">非同期I/OやノンブロッキングI/O及びI/Oの多重化について - 人間とウェブの未来</a></li>
+</ul>
+
+<h3 id="ノンブロッキングなhttpクライアントの実装-comming-soon">ノンブロッキングなhttpクライアントの実装（comming soon）</h3>
+
+<p>社内で　@matsumotory さんから聞いた情報によると、ノンブロッキングなhttpクライアントの機能が実装されるとのこと。</p>
+
+<p>これは、非常に便利で極力な機能で、例としてはnginxの挙動を外部APIの実行結果を元に変更するようなことをしたい場合に、これまでhttpリクエストの処理中はブロッキングされていたがv2から実装される機能を利用するとその間は別の処理を行うことができるため全体的に高速に動作するようになる。</p>
+
+<p>私が担当するプロダクトについては、nginxの挙動を変更するためのパラメータをMySQLのデータベースからRedisにキャッシュしつつ取得している。その為、nginx側にビジネスロジックを持っていてそれが変更になることによって同様の変更をする必要がある。ビジネスロジックをもつhttpベースのAPIが存在するため、そちらから取得すればビジネスロジックの変更に強いし今回のノンブロッキング化が入ることで実現の可能性がある。</p>
+
+<p>これと関連して、mruby-mysqlやmruby-redisなどブロッキングが発生する処理についてもノンブロッキングなメソッドを新たに実装することによって、ngx_mrubyとの組み合わせで同様な効果が得られるため今後の進化の幅が広がったと思える。</p>
 
       </article>
 
       <ul class="pager blog-pager">
         
           <li class="previous">
-            <a href="/blog/2017-11-18-new-blog/" data-toggle="tooltip" data-placement="top" title="ブログ引っ越しました！">&larr; 前ページ</a>
+            <a href="/blog/2017-12-18-ebpf-getting-started/" data-toggle="tooltip" data-placement="top" title="eBPF入門についてKixs vol.006で登壇した">&larr; 前ページ</a>
           </li>
         
-        
-          <li class="next">
-            <a href="/blog/2018-05-02-ngx_mruby_v2/" data-toggle="tooltip" data-placement="top" title="ngx_mruby v2 の新機能を見る">次ページ &rarr;</a>
-          </li>
         
       </ul>
     </div>
