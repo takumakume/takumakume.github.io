@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <title>Linuxのスレッド内でchrootした場合の影響範囲を調べた | takumakume pages</title>
+  <meta property="og:title" content="Linuxのスレッド内でchrootした場合の影響範囲を調べた" />
+  <meta name="twitter:title" content="Linuxのスレッド内でchrootした場合の影響範囲を調べた" />
+  <meta name="description" content="今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc">
+  <meta property="og:description" content="今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc">
+  <meta name="twitter:description" content="今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc">
+  <meta name="author" content="Takuma Kume"/>
+  <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
+  <meta property="og:image" content="/img/profile.jpg" />
+  <meta name="twitter:image" content="/img/profile.jpg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@takumakume" />
+  <meta name="twitter:creator" content="@takumakume" />
+
+
+  <meta name="generator" content="Hugo 0.79.0" />
+  <link rel="canonical" href="/blog/2017-01-18-chroot/" />
+  <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/custom.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" />
+  <link rel="stylesheet" href="/css/highlighting.css" />
+  <link rel="stylesheet" href="/css/pygment_highlights.css" />
+  <link rel="stylesheet" href="/css/highlight.min.css" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.css" integrity="sha256-sCl5PUOGMLfFYctzDW3MtRib0ctyUvI9Qsmq2wXOeBY=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/default-skin/default-skin.min.css" integrity="sha256-BFeI1V+Vh1Rk37wswuOYn5lsTcaU96hGaI7OUVCLjPc=" crossorigin="anonymous" />
+
+
+
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+<div class="pswp__bg"></div>
+
+<div class="pswp__scroll-wrap">
+    
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    
+    <div class="pswp__ui pswp__ui--hidden">
+    <div class="pswp__top-bar">
+      
+      <div class="pswp__counter"></div>
+      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+      <button class="pswp__button pswp__button--share" title="Share"></button>
+      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+      
+      
+      <div class="pswp__preloader">
+        <div class="pswp__preloader__icn">
+          <div class="pswp__preloader__cut">
+            <div class="pswp__preloader__donut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+      <div class="pswp__share-tooltip"></div>
+    </div>
+    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+    </button>
+    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+    </button>
+    <div class="pswp__caption">
+      <div class="pswp__caption__center"></div>
+    </div>
+    </div>
+    </div>
+</div>
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top navbar-custom">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
+        <span class="sr-only">メニューを切り替え</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">takumakume pages</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="nav navbar-nav navbar-right">
+        
+          
+            <li>
+              <a title="Blog" href="/blog">Blog</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="Tags" href="/tags">Tags</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="About Me" href="/about">About Me</a>
+            </li>
+          
+        
+
+        
+
+        
+      </ul>
+    </div>
+
+    <div class="avatar-container">
+      <div class="avatar-img-border">
+        
+          <a title="takumakume pages" href="/">
+            <img class="avatar-img" src="/img/profile.jpg" alt="takumakume pages" />
+          </a>
+        
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+
+
+
+    
+  
+  
+  
+
+
+
+
+  
+
+  <header class="header-section ">
+    
+    <div class="intro-header no-img">
+      
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="blog-heading">
+              <h1>Linuxのスレッド内でchrootした場合の影響範囲を調べた</h1>
+                
+                
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+    
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = 'https://connect.facebook.net/ja_JP/sdk.js#xfbml=1&version=v2.11&appId=1456719794600083';
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div class="container" role="main">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <article role="main" class="blog-post">
+        <p>今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。
+本日は、Linuxのスレッド内でchrootした場合の影響範囲を調べたのでまとめる。</p>
+<h3 id="はじめに">はじめに</h3>
+<p>本エントリではLinuxでスレッドを作成して、システムコールの &ldquo;chroot()&rdquo; を実行した場合にスレッド内のみchrootされるのか？それとも、プロセス全体に影響するのかを調査していく。</p>
+<h3 id="実際に動かして確認する">実際に動かして確認する</h3>
+<h4 id="スレッドを作成してchrootを実行するプログラムをc言語で作成する">スレッドを作成して、chrootを実行するプログラムをC言語で作成する。</h4>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;pthread.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;errno.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;dirent.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;sys/stat.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;string.h&gt;</span><span class="cp">
+</span><span class="cp"></span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_3</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">set_chroot</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">show_files</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">);</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[]){</span>
+  <span class="n">pthread_t</span> <span class="n">thread_id_1</span><span class="p">,</span> <span class="n">thread_id_2</span><span class="p">,</span> <span class="n">thread_id_3</span><span class="p">;</span>
+
+　<span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+
+  <span class="cp"># スレッドを作って順番に実行していく
+</span><span class="cp"></span>  <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thread_id_1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">thread_1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">pthread_join</span><span class="p">(</span><span class="n">thread_id_1</span><span class="p">,</span><span class="nb">NULL</span><span class="p">);</span>
+
+  <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thread_id_2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">thread_2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">pthread_join</span><span class="p">(</span><span class="n">thread_id_2</span><span class="p">,</span><span class="nb">NULL</span><span class="p">);</span>
+
+  <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thread_id_3</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">thread_3</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">pthread_join</span><span class="p">(</span><span class="n">thread_id_3</span><span class="p">,</span><span class="nb">NULL</span><span class="p">);</span>
+
+　<span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">){</span>
+  <span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">){</span>
+  <span class="n">set_chroot</span><span class="p">(</span><span class="s">&#34;/tmp&#34;</span><span class="p">);</span>
+  <span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_3</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">){</span>
+  <span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="o">*</span> <span class="nf">set_chroot</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">){</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;=== chroot ===</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">chroot</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;chroot(%d) %s</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">errno</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="o">*</span> <span class="nf">show_files</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">){</span>
+  <span class="n">DIR</span> <span class="o">*</span><span class="n">dir</span><span class="p">;</span>
+  <span class="k">struct</span> <span class="n">dirent</span> <span class="o">*</span><span class="n">dp</span><span class="p">;</span>
+
+  <span class="n">dir</span><span class="o">=</span><span class="n">opendir</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+  <span class="k">for</span><span class="p">(</span><span class="n">dp</span><span class="o">=</span><span class="n">readdir</span><span class="p">(</span><span class="n">dir</span><span class="p">);</span> <span class="n">dp</span><span class="o">!=</span><span class="nb">NULL</span><span class="p">;</span> <span class="n">dp</span><span class="o">=</span><span class="n">readdir</span><span class="p">(</span><span class="n">dir</span><span class="p">)){</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;%s</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">dp</span><span class="o">-&gt;</span><span class="n">d_name</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">closedir</span><span class="p">(</span><span class="n">dir</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div><p>上記の様にスレッドを作って、順番に処理させる。
+&ldquo;show_files()&rdquo; は指定したディレクトリの中身を表示するメソッドで、&ldquo;set_chroot()&rdquo; は指定したディレクトリをchrootに設定するメソッドです。
+以下のタイミングで &ldquo;show_files( / )&rdquo; でディレクトリ一覧を取得し、&ldquo;set_chroot( /tmp )&rdquo; を実行したタイミングでディレクトリ一覧が &ldquo;/tmp&rdquo; になるパターンを調べる。</p>
+<ul>
+<li>main関数実行直後</li>
+<li>スレッド1実行直後</li>
+<li>スレッド2実行直後</li>
+<li>スレッド3実行直後</li>
+<li>main関数終了直前</li>
+</ul>
+<p>&ldquo;touch /tmp/tmp_here&rdquo; を実行し、tmpディレクトリと分かるようにファイルを配置しておく。</p>
+<h5 id="結果">結果</h5>
+<pre><code>[root@pmilter thread]# gcc -lpthread kume.c &amp;&amp; ./a.out
+
+## main関数実行直後
+## =&gt; `/` が参照されている。
+
+.
+..
+boot
+dev
+proc
+run
+ :
+
+## スレッド1実行直後
+## =&gt; `/` が参照されている。
+
+.
+..
+boot
+dev
+proc
+run
+ :
+
+## スレッド2実行直後
+
+# chroot(&quot;/tmp&quot;)を実行
+=== chroot ===
+
+# =&gt; ここで、`/tmp` が参照されている。
+.
+..
+tmp_here
+
+## スレッド3実行直後
+## =&gt; 以降も `/tmp` が参照されている。
+
+.
+..
+tmp_here
+
+## main関数実行直後
+## =&gt; ここでも　`/tmp` が参照されている。
+
+.
+..
+tmp_here
+</code></pre><p>結果としては、スレッド内で &ldquo;chroot()&rdquo; が実行されて以降は親プロセスを含めて全てにchrootが適応されていることが分かった。
+もちろん、main関数内でchrootした場合も同様だった。</p>
+<h4 id="なぜスレッド内でchrootした場合にそのプロセス全体がchroot状態になるのか">なぜ、スレッド内でchrootした場合に、そのプロセス全体がchroot状態になるのか？</h4>
+<ul>
+<li><a href="https://github.com/torvalds/linux/blob/master/fs/open.c#L486-L517">chroot()</a>のソースを見てみる。</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="n">SYSCALL_DEFINE1</span><span class="p">(</span><span class="n">chroot</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="n">__user</span> <span class="o">*</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">struct</span> <span class="n">path</span> <span class="n">path</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">error</span><span class="p">;</span>
+	<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">lookup_flags</span> <span class="o">=</span> <span class="n">LOOKUP_FOLLOW</span> <span class="o">|</span> <span class="n">LOOKUP_DIRECTORY</span><span class="p">;</span>
+<span class="nl">retry</span><span class="p">:</span>
+	<span class="n">error</span> <span class="o">=</span> <span class="n">user_path_at</span><span class="p">(</span><span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">lookup_flags</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span>
+		<span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
+
+	<span class="n">error</span> <span class="o">=</span> <span class="n">inode_permission</span><span class="p">(</span><span class="n">path</span><span class="p">.</span><span class="n">dentry</span><span class="o">-&gt;</span><span class="n">d_inode</span><span class="p">,</span> <span class="n">MAY_EXEC</span> <span class="o">|</span> <span class="n">MAY_CHDIR</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span>
+		<span class="k">goto</span> <span class="n">dput_and_out</span><span class="p">;</span>
+
+	<span class="n">error</span> <span class="o">=</span> <span class="o">-</span><span class="n">EPERM</span><span class="p">;</span>
+	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">ns_capable</span><span class="p">(</span><span class="n">current_user_ns</span><span class="p">(),</span> <span class="n">CAP_SYS_CHROOT</span><span class="p">))</span>
+		<span class="k">goto</span> <span class="n">dput_and_out</span><span class="p">;</span>
+	<span class="n">error</span> <span class="o">=</span> <span class="n">security_path_chroot</span><span class="p">(</span><span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span>
+		<span class="k">goto</span> <span class="n">dput_and_out</span><span class="p">;</span>
+
+	<span class="n">set_fs_root</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">fs</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="n">error</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="nl">dput_and_out</span><span class="p">:</span>
+	<span class="n">path_put</span><span class="p">(</span><span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">retry_estale</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">lookup_flags</span><span class="p">))</span> <span class="p">{</span>
+		<span class="n">lookup_flags</span> <span class="o">|=</span> <span class="n">LOOKUP_REVAL</span><span class="p">;</span>
+		<span class="k">goto</span> <span class="n">retry</span><span class="p">;</span>
+	<span class="p">}</span>
+<span class="nl">out</span><span class="p">:</span>
+	<span class="k">return</span> <span class="n">error</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div><p>&ldquo;set_fs_root(current-&gt;fs, &amp;path)&rdquo; このようにchrootを設定していることが分かる。</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/blob/5924bbecd0267d87c24110cbe2041b5075173a25/fs/fs_struct.c#L13-L26">set_fs_root()</a>のソースを見てみる。</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">set_fs_root</span><span class="p">(</span><span class="k">struct</span> <span class="n">fs_struct</span> <span class="o">*</span><span class="n">fs</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">path</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">struct</span> <span class="n">path</span> <span class="n">old_root</span><span class="p">;</span>
+
+	<span class="n">path_get</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+	<span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+	<span class="n">write_seqcount_begin</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">seq</span><span class="p">);</span>
+	<span class="n">old_root</span> <span class="o">=</span> <span class="n">fs</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">;</span>
+	<span class="n">fs</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">=</span> <span class="o">*</span><span class="n">path</span><span class="p">;</span>
+	<span class="n">write_seqcount_end</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">seq</span><span class="p">);</span>
+	<span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">old_root</span><span class="p">.</span><span class="n">dentry</span><span class="p">)</span>
+		<span class="n">path_put</span><span class="p">(</span><span class="o">&amp;</span><span class="n">old_root</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div><p>&ldquo;fs-&gt;root = *path;&rdquo; このようにchrootされたディレクトリを格納していることが分かる。</p>
+<p><a href="https://github.com/torvalds/linux/blob/master/include/linux/sched.h#L1511">sched.h - struct task_struct</a></p>
+<p>上記にあった &ldquo;fs_struct&rdquo; 構造体は &ldquo;task_struct&rdquo; 構造体の中にリンクされている。</p>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">task_struct</span> <span class="p">{</span>
+<span class="cp">#ifdef CONFIG_THREAD_INFO_IN_TASK
+</span><span class="cp"></span>	<span class="cm">/*
+</span><span class="cm">	 * For reasons of header soup (see current_thread_info()), this
+</span><span class="cm">	 * must be the first element of task_struct.
+</span><span class="cm">	 */</span>
+	<span class="k">struct</span> <span class="n">thread_info</span> <span class="n">thread_info</span><span class="p">;</span>
+<span class="cp">#endif
+</span><span class="cp"></span>	<span class="k">volatile</span> <span class="kt">long</span> <span class="n">state</span><span class="p">;</span>	<span class="cm">/* -1 unrunnable, 0 runnable, &gt;0 stopped */</span>
+	<span class="kt">void</span> <span class="o">*</span><span class="n">stack</span><span class="p">;</span>
+  <span class="o">:</span> <span class="p">(</span><span class="n">snip</span><span class="p">)</span>
+  <span class="cm">/* filesystem information */</span>
+  <span class="k">struct</span> <span class="n">fs_struct</span> <span class="o">*</span><span class="n">fs</span><span class="p">;</span>
+  <span class="o">:</span> <span class="p">(</span><span class="n">snip</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div><p>&ldquo;task_struct&rdquo; 構造体の中にはスレッドの情報が格納される、 &ldquo;thread_info&rdquo; が存在する。
+&ldquo;thread_info&rdquo; 構造体の中には、chrootされているpathを記録する &ldquo;fs_struct&rdquo; 構造体などは存在しない。</p>
+<h3 id="結論">結論</h3>
+<p>以下の事実を元にすると</p>
+<ul>
+<li>&ldquo;chroot()&rdquo; 実行後は親プロセスを含む全てのスレッドはchroot状態となる。</li>
+<li>&ldquo;chroot()&rdquo; 実行時は、 &ldquo;fs_stract&rdquo; 構造体の &ldquo;root&rdquo; にchrootのpathが記録される。</li>
+<li>&ldquo;fs_stract&rdquo; 構造体はプロセスの情報が格納される、&ldquo;task_struct&rdquo; 構造体にリンクされている。</li>
+<li>&ldquo;thread_info&rdquo; 構造体の中には、chrootされているpathを記録する &ldquo;fs_struct&rdquo; 構造体は存在しない。</li>
+</ul>
+<p>threadで&quot;chroot()&ldquo;を実行した場合もプロセスとして持っている &ldquo;fs_stract&rdquo; 構造体にchrootの情報を格納するため、
+&ldquo;chroot()&rdquo; 実行後は親プロセスを含む全てのスレッドはchroot状態となると思われる。</p>
+
+      </article>
+
+      <ul class="pager blog-pager">
+        
+          <li class="previous">
+            <a href="/blog/2016-12-31-refrection-2016/" data-toggle="tooltip" data-placement="top" title="2016年の振り返り〜エンジニアとして這い上がる">&larr; 前ページ</a>
+          </li>
+        
+        
+          <li class="next">
+            <a href="/blog/2017-04-05-mod-mruby-cpu-time-control/" data-toggle="tooltip" data-placement="top" title="mod_mrubyを使ってリクエスト毎のCPU使用時間に応じたアクセス制限を行う">次ページ &rarr;</a>
+          </li>
+        
+      </ul>
+    </div>
+
+    <div class="social">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+        <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="simple-balloon" title="このエントリーをはてなブックマークに追加">
+          <img src="https://b.st-hatena.com/images/entry-button/button-only@2x.png" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" />
+        </a>
+        <script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+
+        <div class="fb-like" data-layout="button_count" data-action="like" data-size="small" data-show-faces="true" data-share="true"></div>
+
+        <a data-pocket-label="pocket" data-pocket-count="horizontal" class="pocket-btn" data-lang="en"></a>
+        <script type="text/javascript">!function(d,i){if(!d.getElementById(i)){var j=d.createElement("script");j.id=i;j.src="https://widgets.getpocket.com/v1/j/btn.js?v=1";var w=d.getElementById(i);d.body.appendChild(j);}}(document,"pocket-btn-js");</script>
+      </div>
+    </div>
+
+    
+
+  </div>
+</div>
+
+    <footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <ul class="list-inline text-center footer-links">
+          
+              <li>
+                <a href="https://www.facebook.com/takumakume" title="Facebook">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a href="https://github.com/takumakume" title="GitHub">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a href="https://twitter.com/takumakume" title="Twitter">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.instagram.com/takumakume" title="Instagram">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-instagram fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+          
+          <li>
+            <a href="" title="RSS">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="credits copyright text-muted">
+          © 2017 takumakume All Rights Reserved.
+        </p>
+        
+        <p class="credits theme-by text-muted">
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha384-dq1/gEHSxPZQ7DdrM82ID4YVol9BYyU7GbWlIwnwyPzotpoc57wDw/guX8EaYGPx" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/main.js"></script>
+<script src="/js/highlight.min.js"></script>
+<script> hljs.initHighlightingOnLoad(); </script><script> renderMathInElement(document.body); </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.js" integrity="sha256-UplRCs9v4KXVJvVY+p+RSo5Q4ilAUXh7kpjyIP5odyc=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe-ui-default.min.js" integrity="sha256-PWHOlUzc96pMc8ThwRIXPn8yH4NOLu42RQ0b9SpnpFk=" crossorigin="anonymous"></script>
+<script src="/js/load-photoswipe.js"></script>
+
+
+
+  </body>
+</html>
+

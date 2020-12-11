@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <title>eBPF入門についてKixs vol.006で登壇した | takumakume pages</title>
+  <meta property="og:title" content="eBPF入門についてKixs vol.006で登壇した" />
+  <meta name="twitter:title" content="eBPF入門についてKixs vol.006で登壇した" />
+  <meta name="description" content="GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の">
+  <meta property="og:description" content="GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の">
+  <meta name="twitter:description" content="GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の">
+  <meta name="author" content="Takuma Kume"/>
+  <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
+  <meta property="og:image" content="/img/profile.jpg" />
+  <meta name="twitter:image" content="/img/profile.jpg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@takumakume" />
+  <meta name="twitter:creator" content="@takumakume" />
+
+
+  <meta name="generator" content="Hugo 0.79.0" />
+  <link rel="canonical" href="/blog/2017-12-18-ebpf-getting-started/" />
+  <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/custom.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" />
+  <link rel="stylesheet" href="/css/highlighting.css" />
+  <link rel="stylesheet" href="/css/pygment_highlights.css" />
+  <link rel="stylesheet" href="/css/highlight.min.css" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.css" integrity="sha256-sCl5PUOGMLfFYctzDW3MtRib0ctyUvI9Qsmq2wXOeBY=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/default-skin/default-skin.min.css" integrity="sha256-BFeI1V+Vh1Rk37wswuOYn5lsTcaU96hGaI7OUVCLjPc=" crossorigin="anonymous" />
+
+
+
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+<div class="pswp__bg"></div>
+
+<div class="pswp__scroll-wrap">
+    
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    
+    <div class="pswp__ui pswp__ui--hidden">
+    <div class="pswp__top-bar">
+      
+      <div class="pswp__counter"></div>
+      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+      <button class="pswp__button pswp__button--share" title="Share"></button>
+      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+      
+      
+      <div class="pswp__preloader">
+        <div class="pswp__preloader__icn">
+          <div class="pswp__preloader__cut">
+            <div class="pswp__preloader__donut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+      <div class="pswp__share-tooltip"></div>
+    </div>
+    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+    </button>
+    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+    </button>
+    <div class="pswp__caption">
+      <div class="pswp__caption__center"></div>
+    </div>
+    </div>
+    </div>
+</div>
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top navbar-custom">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
+        <span class="sr-only">メニューを切り替え</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">takumakume pages</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="nav navbar-nav navbar-right">
+        
+          
+            <li>
+              <a title="Blog" href="/blog">Blog</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="Tags" href="/tags">Tags</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="About Me" href="/about">About Me</a>
+            </li>
+          
+        
+
+        
+
+        
+      </ul>
+    </div>
+
+    <div class="avatar-container">
+      <div class="avatar-img-border">
+        
+          <a title="takumakume pages" href="/">
+            <img class="avatar-img" src="/img/profile.jpg" alt="takumakume pages" />
+          </a>
+        
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+
+
+
+    
+  
+  
+  
+
+
+
+
+  
+
+  <header class="header-section ">
+    
+    <div class="intro-header no-img">
+      
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="blog-heading">
+              <h1>eBPF入門についてKixs vol.006で登壇した</h1>
+                
+                
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+    
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = 'https://connect.facebook.net/ja_JP/sdk.js#xfbml=1&version=v2.11&appId=1456719794600083';
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div class="container" role="main">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <article role="main" class="blog-post">
+        <p><a href="https://qiita.com/advent-calendar/2017/pepabo">GMOペパボ Advent Calendar 2017</a> の18日目の記事です。</p>
+<p><a href="https://kixs.connpass.com/event/69643/">九州インフラ交流勉強会(Kixs) Vol.006</a> というイベントで「eBPF入門」というタイトルで登壇した。
+当日のスライドは以下。</p>
+<!-- raw HTML omitted -->
+<p><code>BPF</code> とは <!-- raw HTML omitted -->B<!-- raw HTML omitted -->erkeley <!-- raw HTML omitted -->P<!-- raw HTML omitted -->acket <!-- raw HTML omitted -->F<!-- raw HTML omitted -->ilter の略で、 <code>tcpdump(1)</code> や <code>seccomp(2)</code> などに使われていてパケットやシステムコールのフィルタリングをするためのインターフェイスとして利用されている。
+仕組みとしては、 Userspace で 作成した Bytecode を Kernel 内部で実行することでそれらを実現している。スライドにて図解しているのでぜひご覧いただければと思います。</p>
+<p>今回のスライドは「eBPF(<!-- raw HTML omitted -->E<!-- raw HTML omitted -->xtended <!-- raw HTML omitted -->B<!-- raw HTML omitted -->erkeley <!-- raw HTML omitted -->P<!-- raw HTML omitted -->acket <!-- raw HTML omitted -->F<!-- raw HTML omitted -->ilter)入門」ということで拡張されたBPFの機能の一部や仕組みについてを触れています。</p>
+<p>本エントリでは、学習の背景や調査した内容と今後のやっていきについて書く。</p>
+<h2 id="ebpfを学習するに至った背景">eBPFを学習するに至った背景</h2>
+<p>仕事で大規模ホスティング環境の運用を行っていく中で、お客様にお貸ししている共有サーバが高負荷状態になるがその原因が掴みづらい問題がしばしば発生していた。</p>
+<p>10月にGMOペパボにて開催された、<a href="https://pepabo.connpass.com/event/65932/">ペパボ・はてな技術大会@福岡</a> で <a href="https://speakerdeck.com/takumakume/hosuteinguniokeruan-ding-yun-yong-falsetamefalseakusesukontororushou-fa">ホスティングにおける安定運用のためのアクセスコントロール手法</a> というタイトルで登壇した日のこと。</p>
+<p>イベント後の懇親会で、ホスティングの高負荷原因が掴みづらいという話をしていたところ、はてなの <a href="https://twitter.com/yoyogidesaiz">@yoyogidesaiz</a> さんより <code>eBPF</code> の存在を教えていただいたことが始まりだった。</p>
+<h2 id="bpfについて学習">BPFについて学習</h2>
+<p>当初、 <code>BPF</code> について全く知見がなく <code>tcpdump(1)</code> に使われていることすら知らない状況だった。まずはBPFについて知ることが必要だったため以下を参考にした。</p>
+<ul>
+<li>BPF
+<ul>
+<li><a href="http://www.tcpdump.org/papers/bpf-usenix93.pdf">The BSD Packet Filter: A New Architecture for User-level Packet Capture</a></li>
+</ul>
+</li>
+<li>tcpdump
+<ul>
+<li><a href="https://sharkfestus.wireshark.org/sharkfest.11/presentations/McCanne-Sharkfest'11_Keynote_Address.pdf">libpcap: An Architecture and Op2miza2on Methodology for Packet Capture</a></li>
+</ul>
+</li>
+<li>seccomp
+<ul>
+<li><a href="http://udzura.hatenablog.jp/entry/2016/11/18/160020">seccompをmrubyで試す</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="ebpfについて学習">eBPFについて学習</h2>
+<p>まずは、 eBPF が ClassicBPF(以下cBPF) に比べて何が違うのか、既存の手法に比べて何が優位なのか、何ができそうかを調べていった。
+調査をしていくと eBPF は日本語の情報があまりなく、 Brendan Gregg 氏が多くの情報を公開してくださっていたためその付近を調べた。</p>
+<ul>
+<li><a href="https://www.slideshare.net/brendangregg/bpf-tracing-and-more">BPF: Tracing and more</a></li>
+<li><a href="http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html">eBPF: One Small Step</a></li>
+</ul>
+<p>Kernelのヘッダファイルを確認すると、<a href="https://github.com/torvalds/linux/blob/v4.14/include/trace/events/bpf.h#L12">この</a>のように多くのことができるようだった。</p>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="cp">#define __PROG_TYPE_MAP(FN)	\
+</span><span class="cp">	FN(SOCKET_FILTER)	\
+</span><span class="cp">	FN(KPROBE)		\
+</span><span class="cp">	FN(SCHED_CLS)		\
+</span><span class="cp">	FN(SCHED_ACT)		\
+</span><span class="cp">	FN(TRACEPOINT)		\
+</span><span class="cp">	FN(XDP)			\
+</span><span class="cp">	FN(PERF_EVENT)		\
+</span><span class="cp">	FN(CGROUP_SKB)		\
+</span><span class="cp">	FN(CGROUP_SOCK)		\
+</span><span class="cp">	FN(LWT_IN)		\
+</span><span class="cp">	FN(LWT_OUT)		\
+</span><span class="cp">	FN(LWT_XMIT)
+</span></code></pre></div><p>今回は、イメージが付きやすかった、Linux Kernelのトレース <code>KPROBE</code> と、パケットの制御 <code>XDP</code> に絞って調査することにした。</p>
+<p>また、eBPFを利用したツール郡として <a href="https://github.com/iovisor/bcc">iovisor/bcc</a> というPythonのバインディング実装があったためソースコードを参考にした。
+Linux Kernel にも多くの <a href="https://github.com/torvalds/linux/tree/v4.14/samples/bpf">サンプルコード</a> が同梱されていて、動作イメージを想像しやすかった。</p>
+<blockquote>
+<p>まずは、 eBPF が ClassicBPF(以下cBPF) に比べて何が違うのか、既存の手法に比べて何が優位なのか、何ができそうかを調べていった。</p>
+</blockquote>
+<p>上記についてはスライドを是非ご覧ください。</p>
+<h3 id="余談トレースといえば-strace1-じゃん">【余談】トレースといえば <code>strace(1)</code> じゃん！</h3>
+<p>とか思って、 <code>strace(1)</code> の仕組みを調べてみたけどBPFとは関係なかった。せっかく動作内容を調べたのでここに貼っておく。</p>
+<p><img src="/img/2017-12-18/strace.png" alt="strace"></p>
+<p><code>ptrace(2)</code> というシステムコールがあり、解析対象プロセスにattachすることができる。
+attach先はシステムコールを実行してから解析が終わるまでの間は瞬間的にプロセスが停止するようだった。</p>
+<h2 id="既存の技術についても学習機会が多かった">既存の技術についても学習機会が多かった</h2>
+<p>今回学習した範囲は、kprobeやuprobeを使った動的トレースや、XDPというパケット制御だった。</p>
+<blockquote>
+<p>kprobeやuprobeを使った動的トレース</p>
+</blockquote>
+<p>こちらについては、そもそも <code>kprobe</code> 自体ほとんど知らなかったので、存在や仕組みを知ることができた。</p>
+<blockquote>
+<p>XDPというパケット制御</p>
+</blockquote>
+<p>こちらについては、連想されるものとして <code>iptables</code> や <code>cBPF</code> があるが、eBPFがどう優れているかを調査するとおのずとその仕組みを学ぶことになるので非常に有意義だった。</p>
+<h2 id="発表後のフィードバックから得られたこと">発表後のフィードバックから得られたこと</h2>
+<p>例えば、KernelやUserspaceの動的トレースとしては <code>systemtap</code> など色々なツールがある。
+調査当初ちらちらと見ていたが詳しいところが分かっていないのでeBPFがどこまで有用なのか判断がつかない場面があった。</p>
+<p>これまで、あまり触れてこなかった既存のツールの仕組みやできることを把握していかねばならないと感じている。</p>
+<p>既存のツール郡とコンポーネントのマッピングについては、 Brendan Gregg 氏の以下のツイートが参考になりそうなので今後学習していく。</p>
+<!-- raw HTML omitted -->
+<h3 id="今後について">今後について</h3>
+<ul>
+<li>eBPFについては、まだまだ触り部分しか触れていないので継続して調べていく。</li>
+<li>eBPFの有用性について、既存の技術を理解した上で語れるようになること。</li>
+<li>eBPFを仕事に活かしていく時に、どういった課題を解決できるか検討すること。この内容については、12/23の <a href="http://websystemarchitecture.hatenablog.jp/entry/2017/11/16/182041">Web System Architecture研究会</a> で発表したいと考えている。</li>
+</ul>
+
+      </article>
+
+      <ul class="pager blog-pager">
+        
+          <li class="previous">
+            <a href="/blog/2017-11-18-new-blog/" data-toggle="tooltip" data-placement="top" title="ブログ引っ越しました！">&larr; 前ページ</a>
+          </li>
+        
+        
+          <li class="next">
+            <a href="/blog/2018-05-02-ngx_mruby_v2/" data-toggle="tooltip" data-placement="top" title="ngx_mruby v2 の新機能を見る">次ページ &rarr;</a>
+          </li>
+        
+      </ul>
+    </div>
+
+    <div class="social">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+        <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="simple-balloon" title="このエントリーをはてなブックマークに追加">
+          <img src="https://b.st-hatena.com/images/entry-button/button-only@2x.png" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" />
+        </a>
+        <script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+
+        <div class="fb-like" data-layout="button_count" data-action="like" data-size="small" data-show-faces="true" data-share="true"></div>
+
+        <a data-pocket-label="pocket" data-pocket-count="horizontal" class="pocket-btn" data-lang="en"></a>
+        <script type="text/javascript">!function(d,i){if(!d.getElementById(i)){var j=d.createElement("script");j.id=i;j.src="https://widgets.getpocket.com/v1/j/btn.js?v=1";var w=d.getElementById(i);d.body.appendChild(j);}}(document,"pocket-btn-js");</script>
+      </div>
+    </div>
+
+    
+
+  </div>
+</div>
+
+    <footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <ul class="list-inline text-center footer-links">
+          
+              <li>
+                <a href="https://www.facebook.com/takumakume" title="Facebook">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a href="https://github.com/takumakume" title="GitHub">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a href="https://twitter.com/takumakume" title="Twitter">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.instagram.com/takumakume" title="Instagram">
+                  <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-instagram fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+          
+          <li>
+            <a href="" title="RSS">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="credits copyright text-muted">
+          © 2017 takumakume All Rights Reserved.
+        </p>
+        
+        <p class="credits theme-by text-muted">
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha384-dq1/gEHSxPZQ7DdrM82ID4YVol9BYyU7GbWlIwnwyPzotpoc57wDw/guX8EaYGPx" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/main.js"></script>
+<script src="/js/highlight.min.js"></script>
+<script> hljs.initHighlightingOnLoad(); </script><script> renderMathInElement(document.body); </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.js" integrity="sha256-UplRCs9v4KXVJvVY+p+RSo5Q4ilAUXh7kpjyIP5odyc=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe-ui-default.min.js" integrity="sha256-PWHOlUzc96pMc8ThwRIXPn8yH4NOLu42RQ0b9SpnpFk=" crossorigin="anonymous"></script>
+<script src="/js/load-photoswipe.js"></script>
+
+
+
+  </body>
+</html>
+
