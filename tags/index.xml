@@ -1,80 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on takumakume pages</title>
     <link>/tags/</link>
     <description>Recent content in Tags on takumakume pages</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 13 Dec 2016 00:00:00 +0900</lastBuildDate>
-    
-	<atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Wed, 02 May 2018 09:54:10 +0900</lastBuildDate><atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Advent_calendar</title>
-      <link>/tags/advent_calendar/</link>
-      <pubDate>Tue, 13 Dec 2016 00:00:00 +0900</pubDate>
-      
-      <guid>/tags/advent_calendar/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Blog</title>
-      <link>/tags/blog/</link>
-      <pubDate>Sat, 18 Nov 2017 23:27:31 +0900</pubDate>
-      
-      <guid>/tags/blog/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Bpf</title>
-      <link>/tags/bpf/</link>
-      <pubDate>Mon, 18 Dec 2017 00:00:00 +0900</pubDate>
-      
-      <guid>/tags/bpf/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Ci</title>
-      <link>/tags/ci/</link>
-      <pubDate>Wed, 17 Aug 2016 00:00:00 +0900</pubDate>
-      
-      <guid>/tags/ci/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Linux</title>
-      <link>/tags/linux/</link>
-      <pubDate>Mon, 18 Dec 2017 00:00:00 +0900</pubDate>
-      
-      <guid>/tags/linux/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Mod_mruby</title>
-      <link>/tags/mod_mruby/</link>
-      <pubDate>Wed, 05 Apr 2017 00:00:00 +0900</pubDate>
-      
-      <guid>/tags/mod_mruby/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Mruby</title>
-      <link>/tags/mruby/</link>
-      <pubDate>Wed, 05 Apr 2017 00:00:00 +0900</pubDate>
-      
-      <guid>/tags/mruby/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Ngx_mruby</title>
+      <title>ngx_mruby</title>
       <link>/tags/ngx_mruby/</link>
       <pubDate>Wed, 02 May 2018 09:54:10 +0900</pubDate>
       
@@ -83,7 +16,70 @@
     </item>
     
     <item>
-      <title>Pmilter</title>
+      <title>bpf</title>
+      <link>/tags/bpf/</link>
+      <pubDate>Mon, 18 Dec 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/tags/bpf/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>linux</title>
+      <link>/tags/linux/</link>
+      <pubDate>Mon, 18 Dec 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/tags/linux/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>blog</title>
+      <link>/tags/blog/</link>
+      <pubDate>Sat, 18 Nov 2017 23:27:31 +0900</pubDate>
+      
+      <guid>/tags/blog/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mod_mruby</title>
+      <link>/tags/mod_mruby/</link>
+      <pubDate>Wed, 05 Apr 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/tags/mod_mruby/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mruby</title>
+      <link>/tags/mruby/</link>
+      <pubDate>Wed, 05 Apr 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/tags/mruby/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>system_call</title>
+      <link>/tags/system_call/</link>
+      <pubDate>Wed, 18 Jan 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/tags/system_call/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>advent_calendar</title>
+      <link>/tags/advent_calendar/</link>
+      <pubDate>Tue, 13 Dec 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/tags/advent_calendar/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pmilter</title>
       <link>/tags/pmilter/</link>
       <pubDate>Tue, 13 Dec 2016 00:00:00 +0900</pubDate>
       
@@ -92,11 +88,11 @@
     </item>
     
     <item>
-      <title>System_call</title>
-      <link>/tags/system_call/</link>
-      <pubDate>Wed, 18 Jan 2017 00:00:00 +0900</pubDate>
+      <title>ci</title>
+      <link>/tags/ci/</link>
+      <pubDate>Wed, 17 Aug 2016 00:00:00 +0900</pubDate>
       
-      <guid>/tags/system_call/</guid>
+      <guid>/tags/ci/</guid>
       <description></description>
     </item>
     

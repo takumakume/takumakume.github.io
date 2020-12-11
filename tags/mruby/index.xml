@@ -1,15 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Mruby on takumakume pages</title>
+    <title>mruby on takumakume pages</title>
     <link>/tags/mruby/</link>
-    <description>Recent content in Mruby on takumakume pages</description>
+    <description>Recent content in mruby on takumakume pages</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 05 Apr 2017 00:00:00 +0900</lastBuildDate>
-    
-	<atom:link href="/tags/mruby/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Wed, 05 Apr 2017 00:00:00 +0900</lastBuildDate><atom:link href="/tags/mruby/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>mod_mrubyを使ってリクエスト毎のCPU使用時間に応じたアクセス制限を行う</title>
       <link>/blog/2017-04-05-mod-mruby-cpu-time-control/</link>

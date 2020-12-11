@@ -1,15 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Linux on takumakume pages</title>
+    <title>linux on takumakume pages</title>
     <link>/tags/linux/</link>
-    <description>Recent content in Linux on takumakume pages</description>
+    <description>Recent content in linux on takumakume pages</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Mon, 18 Dec 2017 00:00:00 +0900</lastBuildDate>
-    
-	<atom:link href="/tags/linux/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Mon, 18 Dec 2017 00:00:00 +0900</lastBuildDate><atom:link href="/tags/linux/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF入門についてKixs vol.006で登壇した</title>
       <link>/blog/2017-12-18-ebpf-getting-started/</link>

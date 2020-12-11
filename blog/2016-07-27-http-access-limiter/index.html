@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-07-27-http-access-limiter/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,167 +196,113 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h3 id="はじめに">はじめに</h3>
-
+        <h3 id="はじめに">はじめに</h3>
 <p>こんばんは、GMOペパボの久米です。</p>
-
 <p>「<a href="/blog/2016-07-26-install-mod-mruby/">httpd + mod_mrubyでプログラマブルなWEBサーバを構築する</a>」というエントリを書きましたが、今回は <a href="https://github.com/matsumoto-r/mod_mruby">mod_mruby</a> を使った、 <a href="https://twitter.com/matsumotory">@matsumotory</a>さん が作成している <a href="https://github.com/matsumoto-r/http-access-limiter">http-access-limiter</a> というリクエスト先ファイル単位での同時アクセス数を制御できるソフトウェアの導入と検証を行います。</p>
-
 <p>レンタルサーバなど複数のドメインを収容している場合など、サーバの管理者が実行されるプログラムを制御出来ない、あるいはリクエスト数を想定できない時に以下のような運用課題が発生する。</p>
-
 <ul>
 <li>サーバに収容している特定のドメインに大量にアクセスが発生し過負荷状態になる。
-
 <ul>
 <li>これは <a href="https://github.com/matsumoto-r/mod_vhost_maxclients">matsumoto-r/mod_vhost_maxclients</a> を利用することで解決する。</li>
 <li>しかし、リクエスト先ドメイン単位での同時アクセス数を制限するため負荷にほとんど影響しないファイルまで含めて制御対象となる。</li>
-</ul></li>
+</ul>
+</li>
 <li>サーバに収容している特定のプログラムが重い処理を実行され過負荷状態になる。</li>
 </ul>
-
 <p>本エントリでは <a href="https://github.com/matsumoto-r/mod_mruby">mod_mruby</a> + <a href="https://github.com/matsumoto-r/http-access-limiter">http-access-limiter</a> でそれらを解決するための導入検証及び性能比較を行います。</p>
-
 <h3 id="前提">前提</h3>
-
 <p><a href="/blog/2016-07-26-install-mod-mruby/">httpd + mod_mrubyでプログラマブルなWEBサーバを構築する</a> で構築した環境を利用する。</p>
-
 <h3 id="導入">導入</h3>
-
-<pre><code class="language-sh">git clone https://github.com/matsumoto-r/http-access-limiter.git
-cd http-access-limiter
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">git clone https://github.com/matsumoto-r/http-access-limiter.git
+<span class="nb">cd</span> http-access-limiter
 cp -pi access_limiter_apache.conf /etc/httpd/conf.d/
 cp -pri access_limiter /etc/httpd/conf.d/
-</code></pre>
-
-<p>導入は以上。とても簡単ですね！</p>
-
-<h5 id="etc-httpd-conf-d-access-limiter-apache-conf">/etc/httpd/conf.d/access_limiter_apache.conf</h5>
-
-<pre><code class="language-sh">&lt;IfModule mod_mruby.c&gt;
+</code></pre></div><p>導入は以上。とても簡単ですね！</p>
+<h5 id="etchttpdconfdaccess_limiter_apacheconf">/etc/httpd/conf.d/access_limiter_apache.conf</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">&lt;IfModule mod_mruby.c&gt;
   mrubyPostConfigMiddle         /etc/httpd/conf.d/access_limiter/access_limiter_init.rb cache
   mrubyChildInitMiddle          /etc/httpd/conf.d/access_limiter/access_limiter_worker_init.rb cache
-  &lt;FilesMatch ^.*\.php$&gt;
+  &lt;FilesMatch ^.*<span class="se">\.</span>php$&gt;
     mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb cache
     mrubyLogTransactionMiddle     /etc/httpd/conf.d/access_limiter/access_limiter_end.rb cache
   &lt;/FilesMatch&gt;
 &lt;/IfModule&gt;
-</code></pre>
-
-<p><strong>&ldquo;FilesMatch ^.*.php$&rdquo;</strong> の部分で制御対象のファイルを指定します。
+</code></pre></div><p><strong>&ldquo;FilesMatch ^.*.php$&quot;</strong> の部分で制御対象のファイルを指定します。
 上記ではすべての　php ファイルが指定されています。</p>
-
-<h5 id="etc-httpd-conf-d-access-limiter-access-limiter-rb">/etc/httpd/conf.d/access_limiter/access_limiter.rb</h5>
-
-<pre><code class="language-sh">####
-threshold = 2
-####
-(snip)
-</code></pre>
-
-<p>上記を編集して、許容する同時アクセス数を指定します。</p>
-
+<h5 id="etchttpdconfdaccess_limiteraccess_limiterrb">/etc/httpd/conf.d/access_limiter/access_limiter.rb</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1">####</span>
+<span class="nv">threshold</span> <span class="o">=</span> <span class="m">2</span>
+<span class="c1">####</span>
+<span class="o">(</span>snip<span class="o">)</span>
+</code></pre></div><p>上記を編集して、許容する同時アクセス数を指定します。</p>
 <h5 id="httpdをrestartします">httpdをrestartします。</h5>
-
-<pre><code class="language-sh">/etc/init.d/httpd configtest &amp;&amp; /etc/init.d/httpd restart
-</code></pre>
-
-<h3 id="以下のコードをdocumentrootに配置して動作確認">以下のコードをDocumentRootに配置して動作確認</h3>
-
-<h5 id="sleep-php">sleep.php</h5>
-
-<pre><code class="language-php">&lt;?php
-sleep(3);
-echo &quot;loaded&quot;;
-?&gt;
-</code></pre>
-
-<p>ブラウザから３つアクセスを行う。</p>
-
-<pre><code class="language-html">1つ目： loaded
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">/etc/init.d/httpd configtest <span class="o">&amp;&amp;</span> /etc/init.d/httpd restart
+</code></pre></div><h3 id="以下のコードをdocumentrootに配置して動作確認">以下のコードをDocumentRootに配置して動作確認</h3>
+<h5 id="sleepphp">sleep.php</h5>
+<div class="highlight"><pre class="chroma"><code class="language-php" data-lang="php"><span class="o">&lt;?</span><span class="nx">php</span>
+<span class="nx">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+<span class="k">echo</span> <span class="s2">&#34;loaded&#34;</span><span class="p">;</span>
+<span class="cp">?&gt;</span><span class="err">
+</span></code></pre></div><p>ブラウザから３つアクセスを行う。</p>
+<div class="highlight"><pre class="chroma"><code class="language-html" data-lang="html">1つ目： loaded
 2つ目： loaded
 3つ目： Service Temporarily Unavailable
-</code></pre>
-
-<p>error_log</p>
-
+</code></pre></div><p>error_log</p>
 <pre><code>[Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php counter:1
 [Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php counter:2
 [Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php counter:3
 [Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php reached threshold: 2: return 503
-</code></pre>
-
-<p>正常にアクセスを制御できていることが分かる。</p>
-
+</code></pre><p>正常にアクセスを制御できていることが分かる。</p>
 <h3 id="性能を比較">性能を比較</h3>
-
 <p>http-access-limiterを利用することでどの程度パフォーマンスに影響するかを確認したい。
 以下の性能差を確認する。</p>
-
 <ul>
 <li>http-access-limiterを利用しない。</li>
 <li>http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。</li>
 <li>http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定し、キャッシュオプションを無効にする。</li>
 </ul>
-
 <h4 id="環境">環境</h4>
-
 <p>前回の性能測定時は１CPUの仮想マシンでサーバ側とクライアント側を実装していた。
 <a href="https://twitter.com/matsumotory">@matsumotory</a>さんに仮想マシンが１つのCPUを掴もうとして競合して処理待ちが発生すると測定値の精度が落ちる場合があるとご指摘いただきましたので今回は仮想マシンの性能を上げてます。</p>
-
 <ul>
 <li>ホスト: MacBook Pro (Retina 13-inch、Early 2015) 2.7 GHz Intel Core i5</li>
 <li>仮想マシン
-
 <ul>
 <li>サーバ (httpd + mod_mruby + http-access-limtter)
-
 <ul>
 <li>CPU * 2</li>
 <li>RAM 2GB</li>
-</ul></li>
-<li>クライアント (ab)
-
-<ul>
-<li>CPU * 2</li>
-<li>RAM 2GB</li>
-</ul></li>
-</ul></li>
 </ul>
-
+</li>
+<li>クライアント (ab)
+<ul>
+<li>CPU * 2</li>
+<li>RAM 2GB</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
 <h4 id="サーバ側の実装">サーバ側の実装</h4>
-
-<h5 id="etc-httpd-conf-d-access-limiter-apache-conf-1">/etc/httpd/conf.d/access_limiter_apache.conf</h5>
-
-<pre><code class="language-sh">&lt;IfModule mod_mruby.c&gt;
+<h5 id="etchttpdconfdaccess_limiter_apacheconf-1">/etc/httpd/conf.d/access_limiter_apache.conf</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">&lt;IfModule mod_mruby.c&gt;
   mrubyPostConfigMiddle         /etc/httpd/conf.d/access_limiter/access_limiter_init.rb cache
   mrubyChildInitMiddle          /etc/httpd/conf.d/access_limiter/access_limiter_worker_init.rb cache
-  &lt;FilesMatch ^.*\.php$&gt;
+  &lt;FilesMatch ^.*<span class="se">\.</span>php$&gt;
     mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb cache
     mrubyLogTransactionMiddle     /etc/httpd/conf.d/access_limiter/access_limiter_end.rb cache
   &lt;/FilesMatch&gt;
 &lt;/IfModule&gt;
-</code></pre>
-
-<h5 id="etc-httpd-conf-d-access-limiter-access-limiter-rb-1">/etc/httpd/conf.d/access_limiter/access_limiter.rb</h5>
-
-<pre><code class="language-sh">####
-threshold = 90000000
-####
-</code></pre>
-
-<p>とりあえず9千万に設定。</p>
-
-<h5 id="アクセス先ファイル-var-www-html-test-php">アクセス先ファイル: /var/www/html/test.php</h5>
-
-<pre><code class="language-php">&lt;?php
-phpinfo();
-?&gt;
-</code></pre>
-
-<h4 id="測定結果-http-access-limiterを利用しない">【測定結果】http-access-limiterを利用しない。</h4>
-
+</code></pre></div><h5 id="etchttpdconfdaccess_limiteraccess_limiterrb-1">/etc/httpd/conf.d/access_limiter/access_limiter.rb</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1">####</span>
+<span class="nv">threshold</span> <span class="o">=</span> <span class="m">90000000</span>
+<span class="c1">####</span>
+</code></pre></div><p>とりあえず9千万に設定。</p>
+<h5 id="アクセス先ファイル-varwwwhtmltestphp">アクセス先ファイル: /var/www/html/test.php</h5>
+<div class="highlight"><pre class="chroma"><code class="language-php" data-lang="php"><span class="o">&lt;?</span><span class="nx">php</span>
+<span class="nx">phpinfo</span><span class="p">();</span>
+<span class="cp">?&gt;</span><span class="err">
+</span></code></pre></div><h4 id="測定結果http-access-limiterを利用しない">【測定結果】http-access-limiterを利用しない。</h4>
 <pre><code># ab -c 100 -n 100000 -k http://192.168.100.51/test.php
 This is ApacheBench, Version 2.3 &lt;$Revision: 655654 $&gt;
 Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
@@ -390,15 +340,9 @@ Connect:        0   18  52.6     12    1917
 Processing:     2  261 487.5    140   28597
 Waiting:        0   68 166.3     31    7075
 Total:          2  279 490.3    157   28601
-</code></pre>
-
-<h4 id="測定結果-http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく">【測定結果】http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。</h4>
-
-<pre><code class="language-sh">tail -f  /var/log/httpd/error_log | grep 503
-</code></pre>
-
-<p>測定中にhttp-access-limiterに引っかかってしまうならば、しきい値を調整しなければならないためモニタリングしておく。</p>
-
+</code></pre><h4 id="測定結果http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく">【測定結果】http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">tail -f  /var/log/httpd/error_log <span class="p">|</span> grep <span class="m">503</span>
+</code></pre></div><p>測定中にhttp-access-limiterに引っかかってしまうならば、しきい値を調整しなければならないためモニタリングしておく。</p>
 <pre><code># ab -c 100 -n 100000 -k http://192.168.100.51/test.php
 This is ApacheBench, Version 2.3 &lt;$Revision: 655654 $&gt;
 Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
@@ -447,20 +391,14 @@ Percentage of the requests served within a certain time (ms)
   98%   1606
   99%   2014
  100%  14127 (longest request)
-</code></pre>
-
-<h5 id="測定結果-http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく-キャッシュオプションを無効にする">【測定結果】http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。キャッシュオプションを無効にする。</h5>
-
+</code></pre><h5 id="測定結果http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておくキャッシュオプションを無効にする">【測定結果】http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。キャッシュオプションを無効にする。</h5>
 <ul>
 <li>cacheオプションを外すことで、mrubyスクリプトが毎回コンパイルされる。代わりに内容が変更されてもhttpdのリロードが不要。</li>
 <li>本検証はhttpdのgracefulなしにしきい値を変更する場合を考えてどの程度パフォーマンスが低下するかを確認したい。</li>
 </ul>
-
-<pre><code class="language-diff">-    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb cache
-+    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb
-</code></pre>
-
-<pre><code>root@client vagrant]# ab -c 100 -n 100000 -k http://192.168.100.51/test.php
+<div class="highlight"><pre class="chroma"><code class="language-diff" data-lang="diff"><span class="gd">-    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb cache
+</span><span class="gd"></span><span class="gi">+    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb
+</span></code></pre></div><pre><code>root@client vagrant]# ab -c 100 -n 100000 -k http://192.168.100.51/test.php
 This is ApacheBench, Version 2.3 &lt;$Revision: 655654 $&gt;
 Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
 Licensed to The Apache Software Foundation, http://www.apache.org/
@@ -508,52 +446,44 @@ Percentage of the requests served within a certain time (ms)
   98%   1563
   99%   2024
  100%  12651 (longest request)
-</code></pre>
-
-<h3 id="性能差を比較">性能差を比較</h3>
-
+</code></pre><h3 id="性能差を比較">性能差を比較</h3>
 <table>
 <thead>
 <tr>
-<th align="left">項目</th>
+<th style="text-align:left">項目</th>
 <th>Rec/sec</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
-<td align="left">http-access-limiter：無効</td>
+<td style="text-align:left">http-access-limiter：無効</td>
 <td>357.82</td>
 </tr>
-
 <tr>
-<td align="left">http-access-limiter：有効</td>
+<td style="text-align:left">http-access-limiter：有効</td>
 <td>347.53</td>
 </tr>
-
 <tr>
-<td align="left">http-access-limiter：有効（no cache)</td>
+<td style="text-align:left">http-access-limiter：有効（no cache)</td>
 <td>331.62</td>
 </tr>
 </tbody>
 </table>
-
 <ul>
-<li><p>http-access-limiterを有効にした時にどの程度のパフォーマンス低下が発生するか。</p>
-
+<li>
+<p>http-access-limiterを有効にした時にどの程度のパフォーマンス低下が発生するか。</p>
 <ul>
 <li>Requests per secondは約2.9％低下する。</li>
-</ul></li>
-
-<li><p>http-access-limiterのcacheオプションを無効にした場合にどの程度パフォーマンスが低下するか。</p>
-
+</ul>
+</li>
+<li>
+<p>http-access-limiterのcacheオプションを無効にした場合にどの程度パフォーマンスが低下するか。</p>
 <ul>
 <li>Requests per secondは約4.5%低下する。</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h3 id="総括">総括</h3>
-
 <p>http-access-limiterで思ったよりパフォーマンスの劣化は見られなかった。
 時間的に実施できていないが、想定よりも性能劣化が発生しない印象なので差を広げる意味でも100万リクエストくらい処理させた場合の性能差も測定したい。
 後は、cacheオプションを外した時にコンパイル処理がどの程度メモリを消費するかなども見る必要があるとご指摘も頂いているので後日の課題としたい。
@@ -650,7 +580,7 @@ Percentage of the requests served within a certain time (ms)
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-12-13-smtp-dos-detector/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,24 +196,14 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<p>この記事は <a href="http://qiita.com/advent-calendar/2016/mruby">mruby Advent Calendar 2016</a> の13日目の記事です。</p>
-
+        <p>この記事は <a href="http://qiita.com/advent-calendar/2016/mruby">mruby Advent Calendar 2016</a> の13日目の記事です。</p>
 <p>本エントリでは <a href="https://twitter.com/matsumotory">matsumotory</a> さんが作成された、mrubyでメールの制御を行うことができる <a href="https://github.com/matsumotory/pmilter">pmilter</a> を使ってSMTPのDDoSを軽減するソフトウェアを作ってみたのでその紹介をします。</p>
-
 <h2 id="pmilterとは">pmilterとは？</h2>
-
 <p>pmilterはProgrammable Mail Filterの略で、SMTPサーバ（送信や受信）とmilterプロトコルで通信し、SMTPサーバの送受信の振る舞いをRubyでコントロールできるサーバソフトウェアです。</p>
-
 <p>インストールや設定はシンプルでpmilterのバイナリを配置して通常のmilterのようにSMTPサーバに設定するだけです。</p>
-
 <pre><code>### postfixの設定
 smtpd_milters = unix:/pmilter/pmilter.sock
-</code></pre>
-
-<p>そして、milterプロトコルの各フェーズで任意のmrubyスクリプトをフックします。</p>
-
+</code></pre><p>そして、milterプロトコルの各フェーズで任意のmrubyスクリプトをフックします。</p>
 <pre><code>### pmilterの設定
 
  : (snip)
@@ -220,188 +214,137 @@ mruby_connect_handler = &quot;handler/connect.rb&quot;
 # SMTP HELO command filter handler
 mruby_helo_handler = &quot;handler/helo.rb&quot;
  : (snip)
-</code></pre>
-
-<p><a href="https://github.com/matsumotory/ngx_mruby">ngx_mruby</a>や<a href="https://github.com/matsumotory/mod_mruby">mod_mruby</a>を利用したことのある方ならよりイメージしやすいと思います。</p>
-
+</code></pre><p><a href="https://github.com/matsumotory/ngx_mruby">ngx_mruby</a>や<a href="https://github.com/matsumotory/mod_mruby">mod_mruby</a>を利用したことのある方ならよりイメージしやすいと思います。</p>
 <p>詳しくは以下をご参照ください。</p>
-
 <ul>
 <li><a href="http://hb.matsumoto-r.jp/entry/2016/11/03/121517">Pmilter: Programmable Mail Filter Serverを作った</a></li>
 </ul>
-
 <h2 id="pmilterのセットアップ">pmilterのセットアップ</h2>
-
 <p>筆者はCentOS7で動作確認を行いました。セットアップについては以下のエントリをご参照ください。</p>
-
 <ul>
 <li><a href="/blog/2016-11-06-install-pmilter/">pmilter + postfixでプログラマブルなSMTPサーバを作る（入門編）</a></li>
 </ul>
-
 <h2 id="pmilterでメールのddosを軽減する">pmilterでメールのDDoSを軽減する</h2>
-
 <h5 id="smtp-dos-detector">smtp-dos-detector</h5>
-
 <p>今回、<a href="https://github.com/takumakume/smtp-dos-detector">takumakume/smtp-dos-detector</a> というソフトウェアを作りました。
 これは、一定間隔にSMTP接続できる回数を制限したり、送信できるメール通数を制御したりできます。</p>
-
 <h5 id="pmilterのビルド">pmilterのビルド</h5>
-
 <p>pmilterの &ldquo;src/mruby/build_config.rb&rdquo; でpmilterで実行するmruby scriptで使うmgemの設定を行うところがあります。今回は以下のmgemを利用しますので設定してpmilterを再ビルドします。</p>
-
 <ul>
 <li>matsumotory/mruby-mutex</li>
 <li>matsumotory/mruby-localmemcache</li>
 </ul>
-
-<pre><code class="language-diff"># git diff src/mruby/build_config.rb
-diff --git a/src/mruby/build_config.rb b/src/mruby/build_config.rb
-index bc9e69e..c157a37 100644
---- a/src/mruby/build_config.rb
-+++ b/src/mruby/build_config.rb
-@@ -18,6 +18,8 @@ MRuby::Build.new do |conf|
-   # conf.gem 'examples/mrbgems/c_and_ruby_extension_example'
-   # conf.gem :github =&gt; 'masuidrive/mrbgems-example', :checksum_hash =&gt; '76518e8aecd131d047378448ac8055fa29d974a9'
-   # conf.gem :git =&gt; 'git@github.com:masuidrive/mrbgems-example.git', :branch =&gt; 'master', :options =&gt; '-v'
-+  conf.gem :github =&gt; 'matsumotory/mruby-mutex'
-+  conf.gem :github =&gt; 'matsumotory/mruby-localmemcache'
-
+<div class="highlight"><pre class="chroma"><code class="language-diff" data-lang="diff"># git diff src/mruby/build_config.rb
+<span class="gh">diff --git a/src/mruby/build_config.rb b/src/mruby/build_config.rb
+</span><span class="gh">index bc9e69e..c157a37 100644
+</span><span class="gh"></span><span class="gd">--- a/src/mruby/build_config.rb
+</span><span class="gd"></span><span class="gi">+++ b/src/mruby/build_config.rb
+</span><span class="gi"></span><span class="gu">@@ -18,6 +18,8 @@ MRuby::Build.new do |conf|
+</span><span class="gu"></span>   # conf.gem &#39;examples/mrbgems/c_and_ruby_extension_example&#39;
+   # conf.gem :github =&gt; &#39;masuidrive/mrbgems-example&#39;, :checksum_hash =&gt; &#39;76518e8aecd131d047378448ac8055fa29d974a9&#39;
+   # conf.gem :git =&gt; &#39;git@github.com:masuidrive/mrbgems-example.git&#39;, :branch =&gt; &#39;master&#39;, :options =&gt; &#39;-v&#39;
+<span class="gi">+  conf.gem :github =&gt; &#39;matsumotory/mruby-mutex&#39;
+</span><span class="gi">+  conf.gem :github =&gt; &#39;matsumotory/mruby-localmemcache&#39;
+</span><span class="gi"></span>
    # include the default GEMs
-   conf.gembox 'default'
-</code></pre>
-
-<p>再ビルド</p>
-
-<pre><code class="language-sh">make mruby
+   conf.gembox &#39;default&#39;
+</code></pre></div><p>再ビルド</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">make mruby
 make
-</code></pre>
-
-<h5 id="smtp-dos-detectorの使い方">smtp-dos-detectorの使い方</h5>
-
+</code></pre></div><h5 id="smtp-dos-detectorの使い方">smtp-dos-detectorの使い方</h5>
 <p>今回は、IPアドレス単位で一定間隔にSMTP接続をできる回数を制限してみます。</p>
-
 <ul>
 <li>pmilter.conf に以下のように設定する。</li>
 </ul>
-
 <pre><code>[handler]
 # connection info filter hhandler/connect.rb&quot;
 mruby_connect_handler = &quot;handler/smtp-dos-detector/src/smtp_dos_detector.rb&quot;
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>handler/smtp-dos-detector/src/smtp_dos_detector.rb のように <a href="https://github.com/takumakume/smtp-dos-detector">smtp-dos-detector</a> のmruby scriptを配置します。以下のようになっていると思います。</li>
 </ul>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="p">:</span> <span class="p">(</span><span class="n">snip</span><span class="p">)</span>
 
-<pre><code class="language-ruby">: (snip)
+<span class="n">target</span> <span class="o">=</span> <span class="no">Pmilter</span><span class="o">::</span><span class="no">Session</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">client_ipaddr</span>
 
-target = Pmilter::Session.new.client_ipaddr
+<span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="ss">:counter_key</span>       <span class="o">=&gt;</span> <span class="n">target</span><span class="p">,</span>
+  <span class="ss">:threshold_time</span>    <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">,</span>
+  <span class="ss">:threshold_counter</span> <span class="o">=&gt;</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="ss">:expire_time</span>       <span class="o">=&gt;</span> <span class="mi">30</span><span class="p">,</span>
+  <span class="ss">:behind_counter</span>    <span class="o">=&gt;</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">}</span>
 
-config = {
-  :counter_key       =&gt; target,
-  :threshold_time    =&gt; 10,
-  :threshold_counter =&gt; 5,
-  :expire_time       =&gt; 30,
-  :behind_counter    =&gt; -10,
-}
-
-timeout = global_mutex.try_lock_loop(50000) do
-  dos = DosDetector.new config
-  data = dos.analyze
-  p &quot;smtp-dos-detector: analyze: #{data}&quot;
-  begin
-    if dos.detect?
-      p &quot;smtp-dos-detector: detect: #{data}&quot;
-      Pmilter.status = Pmilter::SMFIS_REJECT
-    end
-  rescue =&gt; e
-    raise &quot;smtp-dos-detector: fail: #{e}&quot;
-  ensure
-    global_mutex.unlock
-  end
-end
-p &quot;smtp-dos-detector: get timeout mutex lock, #{data}&quot; if timeout
-</code></pre>
-
-<ul>
+<span class="n">timeout</span> <span class="o">=</span> <span class="n">global_mutex</span><span class="o">.</span><span class="n">try_lock_loop</span><span class="p">(</span><span class="mi">50000</span><span class="p">)</span> <span class="k">do</span>
+  <span class="n">dos</span> <span class="o">=</span> <span class="no">DosDetector</span><span class="o">.</span><span class="n">new</span> <span class="n">config</span>
+  <span class="n">data</span> <span class="o">=</span> <span class="n">dos</span><span class="o">.</span><span class="n">analyze</span>
+  <span class="nb">p</span> <span class="s2">&#34;smtp-dos-detector: analyze: </span><span class="si">#{</span><span class="n">data</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="k">begin</span>
+    <span class="k">if</span> <span class="n">dos</span><span class="o">.</span><span class="n">detect?</span>
+      <span class="nb">p</span> <span class="s2">&#34;smtp-dos-detector: detect: </span><span class="si">#{</span><span class="n">data</span><span class="si">}</span><span class="s2">&#34;</span>
+      <span class="no">Pmilter</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="no">Pmilter</span><span class="o">::</span><span class="no">SMFIS_REJECT</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+    <span class="k">raise</span> <span class="s2">&#34;smtp-dos-detector: fail: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="k">ensure</span>
+    <span class="n">global_mutex</span><span class="o">.</span><span class="n">unlock</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="nb">p</span> <span class="s2">&#34;smtp-dos-detector: get timeout mutex lock, </span><span class="si">#{</span><span class="n">data</span><span class="si">}</span><span class="s2">&#34;</span> <span class="k">if</span> <span class="n">timeout</span>
+</code></pre></div><ul>
 <li>以下に、更に詳しい説明をしていきます。</li>
 </ul>
-
-<pre><code class="language-ruby">target = Pmilter::Session.new.client_ipaddr
-</code></pre>
-
-<p>これは、pmilterからSMTP接続を行ったクライアントのIPアドレスを取得しています。
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="n">target</span> <span class="o">=</span> <span class="no">Pmilter</span><span class="o">::</span><span class="no">Session</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">client_ipaddr</span>
+</code></pre></div><p>これは、pmilterからSMTP接続を行ったクライアントのIPアドレスを取得しています。
 今回は、IPアドレス単位で一定間隔にSMTP接続をできる回数を制限するためです。</p>
-
-<pre><code class="language-ruby">config = {
-  :counter_key       =&gt; target,
-  :threshold_time    =&gt; 10,
-  :threshold_counter =&gt; 5,
-  :expire_time       =&gt; 30,
-  :behind_counter    =&gt; -10,
-}
-</code></pre>
-
-<p>:counter_key には、pmilterから取得したsmtp接続をしてきたクライアントのIPアドレスが入ります。
-この設定の例では「&rdquo;target&rdquo;からのSMTP接続は10秒間(threshold_time)に5回(threshold_counter)まで可能で、それ以降の10回(behind_counter)の接続は30秒(expire_time)間rejectします。」となります。</p>
-
-<pre><code class="language-ruby">if dos.detect?
-  p &quot;smtp-dos-detector: detect: #{data}&quot;
-  Pmilter.status = Pmilter::SMFIS_REJECT
-end
-</code></pre>
-
-<p>ここでは、条件にマッチしてDDoSと判定した接続に対してREJECTを返しています。</p>
-
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="ss">:counter_key</span>       <span class="o">=&gt;</span> <span class="n">target</span><span class="p">,</span>
+  <span class="ss">:threshold_time</span>    <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">,</span>
+  <span class="ss">:threshold_counter</span> <span class="o">=&gt;</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="ss">:expire_time</span>       <span class="o">=&gt;</span> <span class="mi">30</span><span class="p">,</span>
+  <span class="ss">:behind_counter</span>    <span class="o">=&gt;</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div><p>:counter_key には、pmilterから取得したsmtp接続をしてきたクライアントのIPアドレスが入ります。
+この設定の例では「&ldquo;target&quot;からのSMTP接続は10秒間(threshold_time)に5回(threshold_counter)まで可能で、それ以降の10回(behind_counter)の接続は30秒(expire_time)間rejectします。」となります。</p>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="k">if</span> <span class="n">dos</span><span class="o">.</span><span class="n">detect?</span>
+  <span class="nb">p</span> <span class="s2">&#34;smtp-dos-detector: detect: </span><span class="si">#{</span><span class="n">data</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="no">Pmilter</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="no">Pmilter</span><span class="o">::</span><span class="no">SMFIS_REJECT</span>
+<span class="k">end</span>
+</code></pre></div><p>ここでは、条件にマッチしてDDoSと判定した接続に対してREJECTを返しています。</p>
 <h5 id="smtp-dos-detectorの動作">smtp-dos-detectorの動作</h5>
-
 <p>実際にメールを送信した場合にどのような挙動になるのかについて説明します。</p>
-
 <p>テストのため以下のコマンドを実行してローカルからメールを送信します。</p>
-
-<pre><code class="language-sh">echo &quot;test&quot; | mail -s &quot;test&quot; user@hoge.local
-</code></pre>
-
-<p>メールを送信したときのpmilterの出力結果です。</p>
-
-<pre><code class="language-sh"># 1回目の接続：許可 (10秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;0, :counter=&gt;0, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-# 2回目の接続：許可 (10秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;2, :counter=&gt;1, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-# 3回目の接続：許可 (10秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;4, :counter=&gt;2, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-# 4回目の接続：許可 (10秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;4, :counter=&gt;3, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-# 5回目の接続：許可 (10秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;6, :counter=&gt;4, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-# 6回目の接続：拒否 (10秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;7, :counter=&gt;5, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-&quot;smtp-dos-detector: detect: {:time_diff=&gt;7, :counter=&gt;5, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-</code></pre>
-
-<p>6回目の接続時にpostfixに出力されるログ</p>
-
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">echo</span> <span class="s2">&#34;test&#34;</span> <span class="p">|</span> mail -s <span class="s2">&#34;test&#34;</span> user@hoge.local
+</code></pre></div><p>メールを送信したときのpmilterの出力結果です。</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># 1回目の接続：許可 (10秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;0, :counter=&gt;0, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="c1"># 2回目の接続：許可 (10秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;2, :counter=&gt;1, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="c1"># 3回目の接続：許可 (10秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;4, :counter=&gt;2, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="c1"># 4回目の接続：許可 (10秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;4, :counter=&gt;3, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="c1"># 5回目の接続：許可 (10秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;6, :counter=&gt;4, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="c1"># 6回目の接続：拒否 (10秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;7, :counter=&gt;5, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="s2">&#34;smtp-dos-detector: detect: {:time_diff=&gt;7, :counter=&gt;5, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+</code></pre></div><p>6回目の接続時にpostfixに出力されるログ</p>
 <pre><code>Dec 12 14:14:43 pmilter sendmail[5143]: uBCEEhjZ005143: to=postmaster, delay=00:00:00, xdelay=00:00:00, mailer=relay, pri=32273, relay=[127.0.0.1], dsn=5.0.0, stat=Service unavailable
-</code></pre>
-
-<p>&ldquo;Service unavailable&rdquo; を返している事が分かる。</p>
-
-<pre><code class="language-sh"># 7回目の接続：拒否 (30秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;0, :counter=&gt;-9, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-&quot;smtp-dos-detector: detect: {:time_diff=&gt;0, :counter=&gt;-9, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
+</code></pre><p>&ldquo;Service unavailable&rdquo; を返している事が分かる。</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># 7回目の接続：拒否 (30秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;0, :counter=&gt;-9, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="s2">&#34;smtp-dos-detector: detect: {:time_diff=&gt;0, :counter=&gt;-9, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
   :
-# 15回目の接続：拒否 (30秒以内)
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;8, :counter=&gt;-1, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-&quot;smtp-dos-detector: detect: {:time_diff=&gt;8, :counter=&gt;-1, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-# 16回目の接続：許可
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;9, :counter=&gt;0, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
-# 17回目の接続：許可
-&quot;smtp-dos-detector: analyze: {:time_diff=&gt;10, :counter=&gt;1, :counter_key=&gt;\&quot;127.0.0.1\&quot;}&quot;
+<span class="c1"># 15回目の接続：拒否 (30秒以内)</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;8, :counter=&gt;-1, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="s2">&#34;smtp-dos-detector: detect: {:time_diff=&gt;8, :counter=&gt;-1, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="c1"># 16回目の接続：許可</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;9, :counter=&gt;0, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
+<span class="c1"># 17回目の接続：許可</span>
+<span class="s2">&#34;smtp-dos-detector: analyze: {:time_diff=&gt;10, :counter=&gt;1, :counter_key=&gt;\&#34;127.0.0.1\&#34;}&#34;</span>
   :
   :
-</code></pre>
-
-<p>このように、大量にアクセスされた場合に適切なリターンコードでアクセスを拒否することができます。
+</code></pre></div><p>このように、大量にアクセスされた場合に適切なリターンコードでアクセスを拒否することができます。
 また、smtp_dos_detector.rbのフックポイントを変えて、targetを変えることでToやFromをベースとした制御などの応用ができます。</p>
 
       </article>
@@ -495,7 +438,7 @@ end
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

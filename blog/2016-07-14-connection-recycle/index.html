@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-07-14-connection-recycle/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,40 +196,25 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h3 id="はじめに">はじめに</h3>
-
+        <h3 id="はじめに">はじめに</h3>
 <p>どうも、GMOペパボ　インフラエンジニア　正規雇用となりました久米です。</p>
-
 <p>以下のエントリでngx_mrubyを用いたリバースプロキシを構築しました。
 <a href="/blog/2016-05-10-ngx-mruby-reverse-proxy/">CentOS6で ngx_mruby + mruby-memcached + mruby-mysql をインストール</a>
 <a href="/blog/2016-04-11-try-install-ngx-mruby/">ngx_mrubyで転送先を外部参照するリバースプロキシを構築する</a></p>
-
 <p>本エントリでは、ここまで作ってきたリバースプロキシの性能向上をするために
 以下のことを行います。</p>
-
 <ol>
 <li>Workerが起動したときに、mysqldやmemcachedと接続しコネクションを保持する。</li>
 <li>リクエスト毎に行っていた接続処理を保持したコネクションを使い回すことで効率化を図る。</li>
 </ol>
-
 <p>上記を実現するために以下の機能を使います。</p>
-
 <p><a href="https://github.com/matsumoto-r/mruby-userdata">matsumoto-r/mruby-userdata</a></p>
-
 <p>これをngx_mrubyに組み込むことで（デフォルトのbuild_config.rbに組み込まれている。）
 Worker単位でデータを保持し他のmrubyスクリプトからデータの出し入れをすることができるようになります。</p>
-
 <p>参考までにmruby-userdataを利用するためにはngx_mrubyをビルドする時にbuild_config.rbに以下が記載されておく必要があります。</p>
-
-<pre><code class="language-ruby">conf.gem :github =&gt; 'matsumoto-r/mruby-userdata'
-</code></pre>
-
-<h3 id="let-s-development">Let’s development!!</h3>
-
-<h5 id="nginx-conf-抜粋">nginx.conf (抜粋)</h5>
-
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="n">conf</span><span class="o">.</span><span class="n">gem</span> <span class="ss">:github</span> <span class="o">=&gt;</span> <span class="s1">&#39;matsumoto-r/mruby-userdata&#39;</span>
+</code></pre></div><h3 id="lets-development">Let’s development!!</h3>
+<h5 id="nginxconf-抜粋">nginx.conf (抜粋)</h5>
 <pre><code> :　(略)
 http {
     : (略)
@@ -251,306 +240,246 @@ http {
 
     }
 }
-</code></pre>
-
-<pre><code>mruby_init_worker /usr/local/nginx/lib/mruby_init_worker.rb;
-</code></pre>
-
-<p>これはngx_mrubyのWorkerが起動した時に実行されるスクリプトです。
+</code></pre><pre><code>mruby_init_worker /usr/local/nginx/lib/mruby_init_worker.rb;
+</code></pre><p>これはngx_mrubyのWorkerが起動した時に実行されるスクリプトです。
 本検証では、mysqldとmemcachedへの接続と、コネクションをmruby-userdataで内部に格納する役割を持ちます。</p>
-
 <pre><code>mruby_exit_worker /usr/local/nginx/lib/mruby_exit_worker.rb;
-</code></pre>
-
-<p>これはngx_mrubyのWorkerが修了時に実行されるスクリプトです。
+</code></pre><p>これはngx_mrubyのWorkerが修了時に実行されるスクリプトです。
 本検証では、mysqldとmemcachedのコネクションをクローズする役割を持ちます。</p>
-
 <pre><code>mruby_set  $proxy_pass /usr/local/nginx/lib/mruby_get_proxypass.rb　cache;
 proxy_pass http://$proxy_pass;
-</code></pre>
-
-<p>これは、リクエスト毎に実行されproxy_passとなるドメインをmemcachedやmysqldから取得する役割を持ちます。
+</code></pre><p>これは、リクエスト毎に実行されproxy_passとなるドメインをmemcachedやmysqldから取得する役割を持ちます。
 cacheというオプションをつけることで、mrubyスクリプトのコンパイルコストを削減します。
 (しかし、mrubyスクリプトを修正した場合にnginx restartが必要になります。)</p>
+<h5 id="mruby_init_workerrb">mruby_init_worker.rb</h5>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="ch">#!mruby</span>
 
-<h5 id="mruby-init-worker-rb">mruby_init_worker.rb</h5>
+<span class="c1"># memcachedの接続設定</span>
+<span class="n">memcached_server</span> <span class="o">=</span> <span class="s2">&#34;192.168.100.31:11211&#34;</span>
 
-<pre><code class="language-ruby">#!mruby
+<span class="c1"># mysqldの接続設定</span>
+<span class="n">mysqld_server</span>    <span class="o">=</span> <span class="s2">&#34;192.168.100.21&#34;</span>
+<span class="n">mysqld_user</span>      <span class="o">=</span> <span class="s2">&#34;root&#34;</span>
+<span class="n">mysqld_password</span>  <span class="o">=</span> <span class="s2">&#34;root123&#34;</span>
+<span class="n">mysqld_database</span>  <span class="o">=</span> <span class="s2">&#34;domains&#34;</span>
 
-# memcachedの接続設定
-memcached_server = &quot;192.168.100.31:11211&quot;
+<span class="c1">#</span>
+<span class="c1"># メイン処理</span>
+<span class="c1">#</span>
 
-# mysqldの接続設定
-mysqld_server    = &quot;192.168.100.21&quot;
-mysqld_user      = &quot;root&quot;
-mysqld_password  = &quot;root123&quot;
-mysqld_database  = &quot;domains&quot;
+<span class="c1"># memcachedに接続</span>
+<span class="n">memcached</span> <span class="o">=</span> <span class="no">Memcached</span><span class="o">.</span><span class="n">new</span> <span class="n">memcached_server</span>
 
-#
-# メイン処理
-#
+<span class="k">if</span> <span class="n">memcached</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+	<span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;memcached_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">memcached_connection</span> <span class="o">=</span> <span class="n">memcached</span>
+<span class="k">end</span>
 
-# memcachedに接続
-memcached = Memcached.new memcached_server
+<span class="c1"># mysqldに接続</span>
+<span class="n">mysqld</span> <span class="o">=</span> <span class="no">MySQL</span><span class="o">::</span><span class="no">Database</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">mysqld_server</span><span class="p">,</span> <span class="n">mysqld_user</span><span class="p">,</span> <span class="n">mysqld_password</span><span class="p">,</span> <span class="n">mysqld_database</span><span class="p">)</span>
 
-if memcached != nil then
-	Userdata.new(&quot;memcached_#{Process.pid}&quot;).memcached_connection = memcached
-end
-
-# mysqldに接続
-mysqld = MySQL::Database.new(mysqld_server, mysqld_user, mysqld_password, mysqld_database)
-
-if mysqld != nil then
-	Userdata.new(&quot;mysqld_#{Process.pid}&quot;).mysqld_connection = mysqld
-end
-</code></pre>
-
-<pre><code class="language-ruby">Userdata.new(&quot;memcached_#{Process.pid}&quot;).memcached_connection
-</code></pre>
-
-<p>上記のようにコネクションをmruby-userdataを利用して格納する。
+<span class="k">if</span> <span class="n">mysqld</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+	<span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;mysqld_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">mysqld_connection</span> <span class="o">=</span> <span class="n">mysqld</span>
+<span class="k">end</span>
+</code></pre></div><div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;memcached_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">memcached_connection</span>
+</code></pre></div><p>上記のようにコネクションをmruby-userdataを利用して格納する。
 これで、コネクションをWorker内の他のmrubyスクリプトから取り出すことができる。</p>
+<h5 id="mruby_exit_workerrb">mruby_exit_worker.rb</h5>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="ch">#!mruby</span>
 
-<h5 id="mruby-exit-worker-rb">mruby_exit_worker.rb</h5>
+<span class="c1">#</span>
+<span class="c1"># メイン処理</span>
+<span class="c1">#</span>
 
-<pre><code class="language-ruby">#!mruby
+<span class="c1"># mruby-userdataのmemcachedのオブジェクト</span>
+<span class="n">memcached</span> <span class="o">=</span> <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;memcached_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">memcached_connection</span>
 
-#
-# メイン処理
-#
+<span class="c1"># mruby-userdataのmysqldのオブジェクト</span>
+<span class="n">mysqld</span> <span class="o">=</span> <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;mysqld_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">mysqld_connection</span>
 
-# mruby-userdataのmemcachedのオブジェクト
-memcached = Userdata.new(&quot;memcached_#{Process.pid}&quot;).memcached_connection
+<span class="c1"># Close memcached connection</span>
+<span class="k">if</span> <span class="n">memcached</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+    <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;memcached_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">memcached_connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
 
-# mruby-userdataのmysqldのオブジェクト
-mysqld = Userdata.new(&quot;mysqld_#{Process.pid}&quot;).mysqld_connection
+<span class="c1"># Close mysqld connection</span>
+<span class="k">if</span> <span class="n">mysqld</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+    <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;mysqld_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">mysqld_connection</span><span class="o">.</span><span class="n">close</span>
+<span class="k">end</span>
+</code></pre></div><h5 id="mruby_get_proxypassrb">mruby_get_proxypass.rb</h5>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="ch">#!mruby</span>
 
-# Close memcached connection
-if memcached != nil then
-    Userdata.new(&quot;memcached_#{Process.pid}&quot;).memcached_connection.close
-end
+<span class="c1"># memcachedの接続設定</span>
+<span class="n">memecached_server</span> <span class="o">=</span> <span class="s2">&#34;192.168.100.31:11211&#34;</span>
 
-# Close mysqld connection
-if mysqld != nil then
-    Userdata.new(&quot;mysqld_#{Process.pid}&quot;).mysqld_connection.close
-end
-</code></pre>
+<span class="c1"># mysqldの接続設定</span>
+<span class="n">mysqld_server</span>      <span class="o">=</span> <span class="s2">&#34;192.168.100.21&#34;</span>
+<span class="n">mysqld_user</span>        <span class="o">=</span> <span class="s2">&#34;root&#34;</span>
+<span class="n">mysqld_password</span>    <span class="o">=</span> <span class="s2">&#34;root123&#34;</span>
+<span class="n">mysqld_database</span>    <span class="o">=</span> <span class="s2">&#34;domains&#34;</span>
 
-<h5 id="mruby-get-proxypass-rb">mruby_get_proxypass.rb</h5>
+<span class="c1"># mruby_set用の変数初期化</span>
+<span class="n">proxy_pass</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
-<pre><code class="language-ruby">#!mruby
+<span class="c1">#</span>
+<span class="c1"># メイン処理</span>
+<span class="c1">#</span>
 
-# memcachedの接続設定
-memecached_server = &quot;192.168.100.31:11211&quot;
+<span class="c1"># mruby-userdataのmemcachedのオブジェクト</span>
+<span class="n">memcached</span> <span class="o">=</span> <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;memcached_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">memcached_connection</span>
 
-# mysqldの接続設定
-mysqld_server      = &quot;192.168.100.21&quot;
-mysqld_user        = &quot;root&quot;
-mysqld_password    = &quot;root123&quot;
-mysqld_database    = &quot;domains&quot;
+<span class="c1"># mruby-userdataのmysqldのオブジェクト</span>
+<span class="n">mysqld</span> <span class="o">=</span> <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;mysqld_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">mysqld_connection</span>
 
-# mruby_set用の変数初期化
-proxy_pass = ''
+<span class="c1"># Nginx variables</span>
+<span class="n">v</span> <span class="o">=</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">Var</span><span class="o">.</span><span class="n">new</span>
 
-#
-# メイン処理
-#
+<span class="c1"># request domainからホストされているサーバを照会する。</span>
+<span class="no">Nginx</span><span class="o">.</span><span class="n">return</span> <span class="o">-&gt;</span> <span class="k">do</span>
 
-# mruby-userdataのmemcachedのオブジェクト
-memcached = Userdata.new(&quot;memcached_#{Process.pid}&quot;).memcached_connection
+    <span class="c1"># memcachedのコネクションが切れている場合は接続する。(mruby-userdataに格納する。)</span>
+    <span class="k">if</span> <span class="n">memcached</span> <span class="o">==</span> <span class="kp">nil</span> <span class="k">then</span>
+        <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: trying to connect to memcached. host=&#34;</span> <span class="o">+</span> <span class="n">memecached_server</span>
+        <span class="n">memcached</span> <span class="o">=</span> <span class="no">Memcached</span><span class="o">.</span><span class="n">new</span> <span class="n">memecached_server</span>
+        <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;memcached_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">memcached_connection</span> <span class="o">=</span> <span class="n">memecached</span>
+    <span class="k">end</span>
 
-# mruby-userdataのmysqldのオブジェクト
-mysqld = Userdata.new(&quot;mysqld_#{Process.pid}&quot;).mysqld_connection
+    <span class="c1"># memcachedからproxy_passを取得するし格納する。</span>
+    <span class="n">proxy_pass</span> <span class="o">=</span> <span class="n">memcached</span><span class="o">.</span><span class="n">get</span> <span class="n">v</span><span class="o">.</span><span class="n">http_host</span>
 
-# Nginx variables
-v = Nginx::Var.new
+    <span class="c1"># memcachedからproxy_passが取得できた場合は処理を抜ける。</span>
+    <span class="k">if</span> <span class="n">proxy_pass</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+        <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: memcached: req=&#34;</span> <span class="o">+</span> <span class="n">v</span><span class="o">.</span><span class="n">http_host</span> <span class="o">+</span> <span class="s2">&#34; res=&#34;</span> <span class="o">+</span> <span class="n">proxy_pass</span>
+        <span class="k">return</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">DECLINED</span>
+    <span class="k">end</span>
 
-# request domainからホストされているサーバを照会する。
-Nginx.return -&gt; do
+    <span class="c1"># mysqldのコネクションが切れている場合は接続する。(mruby-userdataに格納する。)</span>
+    <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: trying to connect to mysqld. host=&#34;</span> <span class="o">+</span> <span class="n">mysqld_server</span>
+    <span class="n">mysqld</span> <span class="o">=</span> <span class="no">MySQL</span><span class="o">::</span><span class="no">Database</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">mysqld_server</span><span class="p">,</span> <span class="n">mysqld_user</span><span class="p">,</span> <span class="n">mysqld_password</span><span class="p">,</span> <span class="n">mysqld_database</span><span class="p">)</span>
+    <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;mysqld_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">mysqld_connection</span> <span class="o">=</span> <span class="n">mysqld</span>
 
-    # memcachedのコネクションが切れている場合は接続する。(mruby-userdataに格納する。)
-    if memcached == nil then
-        Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: trying to connect to memcached. host=&quot; + memecached_server
-        memcached = Memcached.new memecached_server
-        Userdata.new(&quot;memcached_#{Process.pid}&quot;).memcached_connection = memecached
-    end
+    <span class="c1"># mysqldからproxy_passを取得する。</span>
+	<span class="k">begin</span>
+        <span class="n">mysql_result</span> <span class="o">=</span> <span class="n">mysqld</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&#34;SELECT host FROM domain WHERE domain = ? LIMIT 1&#34;</span><span class="p">,</span> <span class="s2">&#34;</span><span class="si">#{</span><span class="n">v</span><span class="o">.</span><span class="n">http_host</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+	<span class="k">rescue</span>
+	    <span class="c1"># mysqldのコネクションが切れている場合は接続する。(mruby-userdataに格納する。</span>
+	    <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: trying to connect to mysqld. host=&#34;</span> <span class="o">+</span> <span class="n">mysqld_server</span>
+        <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;mysqld_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">mysqld_connection</span> <span class="o">=</span> <span class="n">mysqld</span>
+        <span class="k">retry</span>
+	<span class="k">end</span>
 
-    # memcachedからproxy_passを取得するし格納する。
-    proxy_pass = memcached.get v.http_host
+    <span class="c1"># mysqldから結果が帰ってくればproxy_passに格納する。</span>
+    <span class="k">if</span> <span class="n">mysql_result</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+        <span class="n">proxy_pass</span> <span class="o">=</span> <span class="n">mysql_result</span><span class="o">.</span><span class="n">next</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+        <span class="n">mysql_result</span><span class="o">.</span><span class="n">close</span>
+    <span class="k">end</span>
 
-    # memcachedからproxy_passが取得できた場合は処理を抜ける。
-    if proxy_pass != nil then
-        Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: memcached: req=&quot; + v.http_host + &quot; res=&quot; + proxy_pass
-        return Nginx::DECLINED
-    end
+    <span class="c1"># mysqldからproxy_passが取得できれば処理を抜ける。</span>
+    <span class="k">if</span> <span class="n">proxy_pass</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+        <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: mysqld: req=&#34;</span> <span class="o">+</span> <span class="n">v</span><span class="o">.</span><span class="n">http_host</span> <span class="o">+</span> <span class="s2">&#34; res=&#34;</span> <span class="o">+</span> <span class="n">proxy_pass</span>
 
-    # mysqldのコネクションが切れている場合は接続する。(mruby-userdataに格納する。)
-    Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: trying to connect to mysqld. host=&quot; + mysqld_server
-    mysqld = MySQL::Database.new(mysqld_server, mysqld_user, mysqld_password, mysqld_database)
-    Userdata.new(&quot;mysqld_#{Process.pid}&quot;).mysqld_connection = mysqld
+        <span class="c1"># memcachedにproxy_passを格納する。</span>
+        <span class="n">memcached</span><span class="o">.</span><span class="n">set</span> <span class="n">v</span><span class="o">.</span><span class="n">http_host</span><span class="p">,</span> <span class="n">proxy_pass</span>
+        <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: memcached: create cache key=&#34;</span> <span class="o">+</span> <span class="n">v</span><span class="o">.</span><span class="n">http_host</span> <span class="o">+</span> <span class="s2">&#34; val=&#34;</span> <span class="o">+</span> <span class="n">proxy_pass</span>
 
-    # mysqldからproxy_passを取得する。
-	begin
-        mysql_result = mysqld.execute(&quot;SELECT host FROM domain WHERE domain = ? LIMIT 1&quot;, &quot;#{v.http_host}&quot;)
-	rescue
-	    # mysqldのコネクションが切れている場合は接続する。(mruby-userdataに格納する。
-	    Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: trying to connect to mysqld. host=&quot; + mysqld_server
-        Userdata.new(&quot;mysqld_#{Process.pid}&quot;).mysqld_connection = mysqld
-        retry
-	end
+        <span class="k">return</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">DECLINED</span>
+    <span class="k">end</span>
 
-    # mysqldから結果が帰ってくればproxy_passに格納する。
-    if mysql_result != nil then
-        proxy_pass = mysql_result.next[0]
-        mysql_result.close
-    end
+    <span class="c1"># 存在しないドメインをリクエストされているためログを出力して503エラーを返す。</span>
+    <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: request host is not found. req=&#34;</span> <span class="o">+</span> <span class="n">v</span><span class="o">.</span><span class="n">http_host</span>
+    <span class="k">return</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">HTTP_SERVICE_UNAVAILABLE</span>
 
-    # mysqldからproxy_passが取得できれば処理を抜ける。
-    if proxy_pass != nil then
-        Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: mysqld: req=&quot; + v.http_host + &quot; res=&quot; + proxy_pass
+<span class="k">end</span><span class="o">.</span><span class="n">call</span>
 
-        # memcachedにproxy_passを格納する。
-        memcached.set v.http_host, proxy_pass
-        Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: memcached: create cache key=&quot; + v.http_host + &quot; val=&quot; + proxy_pass
-
-        return Nginx::DECLINED
-    end
-
-    # 存在しないドメインをリクエストされているためログを出力して503エラーを返す。
-    Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: request host is not found. req=&quot; + v.http_host
-    return Nginx::HTTP_SERVICE_UNAVAILABLE
-
-end.call
-
-proxy_pass
-</code></pre>
-
-<pre><code class="language-ruby">Nginx.return -&gt; do
- (処理)
-end.call
-</code></pre>
-
-<p>このようにラムダ的な書き方になっているのは、mrubyはreturnのように途中でプログラムから抜けることができないため最後まで処理が実行されてしまうからである。
+<span class="n">proxy_pass</span>
+</code></pre></div><div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="no">Nginx</span><span class="o">.</span><span class="n">return</span> <span class="o">-&gt;</span> <span class="k">do</span>
+ <span class="p">(</span><span class="err">処理</span><span class="p">)</span>
+<span class="k">end</span><span class="o">.</span><span class="n">call</span>
+</code></pre></div><p>このようにラムダ的な書き方になっているのは、mrubyはreturnのように途中でプログラムから抜けることができないため最後まで処理が実行されてしまうからである。
 上記のような書き方をすることで一般的な関数のように、条件によって処理を抜けるような振る舞いをすることができる。</p>
-
 <p>これには弊社の<a href="https://twitter.com/matsumotory">@matsumotory</a>さんの紹介により以下のブログを参考にして実装した。</p>
-
 <p><a href="http://lamanotrama.hateblo.jp/entry/2015/08/02/005930">ngx_mrubyを使って特定ホスト以外からのアクセスをメンテナンス画面にする</a></p>
-
 <p>ここの実装は例えばmysqldやmemcachedのサーバがrestartされるなどしてコネクションを失ってしまった時のために、接続の有効性を確認→無効であれば接続してmruby-userdataで格納。ということをしている。</p>
-
-<pre><code class="language-ruby"># mysqldからproxy_passを取得する。
-begin
-    mysql_result = mysqld.execute(&quot;SELECT host FROM domain WHERE domain = ? LIMIT 1&quot;, &quot;#{v.http_host}&quot;)
-rescue
-    # mysqldのコネクションが切れている場合は接続する。(mruby-userdataに格納する。
-    Nginx.errlogger Nginx::LOG_INFO, &quot;mruby_get_proxypass: trying to connect to mysqld. host=&quot; + mysqld_server
-    Userdata.new(&quot;mysqld_#{Process.pid}&quot;).mysqld_connection = mysqld
-    retry
-end
-</code></pre>
-
-<p>上記のように、mysqldのクエリ実行に失敗した場合にmysqldに再接続してリトライするようにしている。
-単純に&rdquo;mysql_connection != nil &hellip;&rdquo; のように評価するだけでは意図した動作をしなかった。</p>
-
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="c1"># mysqldからproxy_passを取得する。</span>
+<span class="k">begin</span>
+    <span class="n">mysql_result</span> <span class="o">=</span> <span class="n">mysqld</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&#34;SELECT host FROM domain WHERE domain = ? LIMIT 1&#34;</span><span class="p">,</span> <span class="s2">&#34;</span><span class="si">#{</span><span class="n">v</span><span class="o">.</span><span class="n">http_host</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="k">rescue</span>
+    <span class="c1"># mysqldのコネクションが切れている場合は接続する。(mruby-userdataに格納する。</span>
+    <span class="no">Nginx</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;mruby_get_proxypass: trying to connect to mysqld. host=&#34;</span> <span class="o">+</span> <span class="n">mysqld_server</span>
+    <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&#34;mysqld_</span><span class="si">#{</span><span class="no">Process</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">mysqld_connection</span> <span class="o">=</span> <span class="n">mysqld</span>
+    <span class="k">retry</span>
+<span class="k">end</span>
+</code></pre></div><p>上記のように、mysqldのクエリ実行に失敗した場合にmysqldに再接続してリトライするようにしている。
+単純に&quot;mysql_connection != nil &hellip;&quot; のように評価するだけでは意図した動作をしなかった。</p>
 <h5 id="動作検証">動作検証</h5>
-
 <p>以下のようなコマンドをmysqldサーバ、memcachedサーバで実行してコネクションをモニタリングする。</p>
-
-<pre><code class="language-sh">watch -d &quot;netstat -tanp | grep ngx_mrubyサーバのIPアドレス&quot;
-</code></pre>
-
-<p>nginxの　error_log　も　tail -f　などでモニタリングする。</p>
-
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">watch -d <span class="s2">&#34;netstat -tanp | grep ngx_mrubyサーバのIPアドレス&#34;</span>
+</code></pre></div><p>nginxの　error_log　も　tail -f　などでモニタリングする。</p>
 <h6 id="nginxを起動する">nginxを起動する。</h6>
-
-<pre><code class="language-sh"># nginx
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># nginx</span>
 /etc/init.d/nginx start
 
-# mysqld
-tcp        0	  0 192.168.100.21:3306         192.168.100.10:51528        ESTABLISHED 6029/mysqld
+<span class="c1"># mysqld</span>
+tcp        0	  <span class="m">0</span> 192.168.100.21:3306         192.168.100.10:51528        ESTABLISHED 6029/mysqld
 
-# memcached
+<span class="c1"># memcached</span>
 こちらは最初のgetやsetメソッドが実行されないとコネクションが張られない模様。
-</code></pre>
-
-<p>接続時にmysqldのコネクションが張られたことが分かった。
+</code></pre></div><p>接続時にmysqldのコネクションが張られたことが分かった。
 次はこのコネクションを使い回す。</p>
-
-<h6 id="ngx-mruby経由でwebサイトにアクセスしてみる">ngx_mruby経由でWEBサイトにアクセスしてみる。</h6>
-
+<h6 id="ngx_mruby経由でwebサイトにアクセスしてみる">ngx_mruby経由でWEBサイトにアクセスしてみる。</h6>
 <p>1回目のアクセス</p>
-
-<pre><code class="language-sh"># クライアント
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># クライアント</span>
 curl http://site-a.local/
 
-# nginx
-2016/07/13 15:16:09 [info] 26391#0: *1 mruby_get_proxypass: mysqld: req=site-a.local res=web1.local, client: 192.168.100.10, server: , request: &quot;GET / HTTP/1.1&quot;, host: &quot;site-a.local&quot;
-2016/07/13 15:16:09 [info] 26391#0: *1 mruby_get_proxypass: memcached: create cache key=site-a.local val=web1.local, client: 192.168.100.10, server: , request: &quot;GET / HTTP/1.1&quot;, host: &quot;site-a.local&quot;
+<span class="c1"># nginx</span>
+2016/07/13 15:16:09 <span class="o">[</span>info<span class="o">]</span> 26391#0: *1 mruby_get_proxypass: mysqld: <span class="nv">req</span><span class="o">=</span>site-a.local <span class="nv">res</span><span class="o">=</span>web1.local, client: 192.168.100.10, server: , request: <span class="s2">&#34;GET / HTTP/1.1&#34;</span>, host: <span class="s2">&#34;site-a.local&#34;</span>
+2016/07/13 15:16:09 <span class="o">[</span>info<span class="o">]</span> 26391#0: *1 mruby_get_proxypass: memcached: create cache <span class="nv">key</span><span class="o">=</span>site-a.local <span class="nv">val</span><span class="o">=</span>web1.local, client: 192.168.100.10, server: , request: <span class="s2">&#34;GET / HTTP/1.1&#34;</span>, host: <span class="s2">&#34;site-a.local&#34;</span>
 
-# memcached
-tcp        0	  0 192.168.100.31:11211        192.168.100.10:47983        ESTABLISHED 28027/memcached
+<span class="c1"># memcached</span>
+tcp        0	  <span class="m">0</span> 192.168.100.31:11211        192.168.100.10:47983        ESTABLISHED 28027/memcached
 
-# mysqld
-tcp        0	  0 192.168.100.21:3306         192.168.100.10:51532        ESTABLISHED 6029/mysqld
-</code></pre>
-
-<ul>
+<span class="c1"># mysqld</span>
+tcp        0	  <span class="m">0</span> 192.168.100.21:3306         192.168.100.10:51532        ESTABLISHED 6029/mysqld
+</code></pre></div><ul>
 <li>memcachedのコネクションが接続された。</li>
 <li>mysqldのコネクションが使いまわされている。</li>
-<li>mysqldから&rdquo;site-a.local&rdquo;のホスト先である&rdquo;web1.local&rdquo;が取得されていて、それをmemachedに書き込んでいる。</li>
+<li>mysqldから&quot;site-a.local&quot;のホスト先である&quot;web1.local&quot;が取得されていて、それをmemachedに書き込んでいる。</li>
 </ul>
-
 <p>２回目のアクセス</p>
-
-<pre><code class="language-sh"># クライアント
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># クライアント</span>
 curl http://site-a.local/
 
-# nginx
-2016/07/13 15:28:44 [info] 26391#0: *4 mruby_get_proxypass: memcached: req=site-a.local res=web1.local, client: 192.168.100.10, server: , request: &quot;GET / HTTP/1.1&quot;, host: &quot;site-a.local&quot;
+<span class="c1"># nginx</span>
+2016/07/13 15:28:44 <span class="o">[</span>info<span class="o">]</span> 26391#0: *4 mruby_get_proxypass: memcached: <span class="nv">req</span><span class="o">=</span>site-a.local <span class="nv">res</span><span class="o">=</span>web1.local, client: 192.168.100.10, server: , request: <span class="s2">&#34;GET / HTTP/1.1&#34;</span>, host: <span class="s2">&#34;site-a.local&#34;</span>
 
-# memcached
-tcp        0	  0 192.168.100.31:11211        192.168.100.10:47983        ESTABLISHED 28027/memcached
+<span class="c1"># memcached</span>
+tcp        0	  <span class="m">0</span> 192.168.100.31:11211        192.168.100.10:47983        ESTABLISHED 28027/memcached
 
-# mysqld
-tcp        0	  0 192.168.100.21:3306         192.168.100.10:51532        ESTABLISHED 6029/mysqld
-</code></pre>
-
-<ul>
+<span class="c1"># mysqld</span>
+tcp        0	  <span class="m">0</span> 192.168.100.21:3306         192.168.100.10:51532        ESTABLISHED 6029/mysqld
+</code></pre></div><ul>
 <li>memcachedのコネクションが使いまわされている。</li>
 <li>mysqldのコネクションが使いまわされている。</li>
-<li>mysqldから&rdquo;site-a.local&rdquo;のホスト先である&rdquo;web1.local&rdquo;が１回目で書き込んだmemcachedのキャッシュから取得している。</li>
+<li>mysqldから&quot;site-a.local&quot;のホスト先である&quot;web1.local&quot;が１回目で書き込んだmemcachedのキャッシュから取得している。</li>
 </ul>
-
 <p>mysqld memcached を restart する。</p>
-
-<pre><code class="language-sh"># mysqld
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># mysqld</span>
 /etc/init.d/mysqld restart
 
-# memcached
+<span class="c1"># memcached</span>
 /etc/init.d/memcached restart
-</code></pre>
-
-<p>再度アクセスする。</p>
-
-<pre><code class="language-sh">2016/07/13 16:06:49 [info] 26684#0: *1 mruby_get_proxypass: trying to connect to mysqld. host=192.168.100.21, client: 192.168.100.10, server: , request: &quot;GET / HTTP/1.1&quot;, host: &quot;site-a.local&quot;
-2016/07/13 16:06:49 [info] 26684#0: *1 mruby_get_proxypass: mysqld: req=site-a.local res=web1.local, client: 192.168.100.10, server: , request: &quot;GET / HTTP/1.1&quot;, host: &quot;site-a.local&quot;
-2016/07/13 16:06:49 [info] 26684#0: *1 mruby_get_proxypass: memcached: create cache key=site-a.local val=web1.local, client: 192.168.100.10, server: , request: &quot;GET / HTTP/1.1&quot;, host: &quot;site-a.local&quot;
-</code></pre>
-
-<ul>
+</code></pre></div><p>再度アクセスする。</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">2016/07/13 16:06:49 <span class="o">[</span>info<span class="o">]</span> 26684#0: *1 mruby_get_proxypass: trying to connect to mysqld. <span class="nv">host</span><span class="o">=</span>192.168.100.21, client: 192.168.100.10, server: , request: <span class="s2">&#34;GET / HTTP/1.1&#34;</span>, host: <span class="s2">&#34;site-a.local&#34;</span>
+2016/07/13 16:06:49 <span class="o">[</span>info<span class="o">]</span> 26684#0: *1 mruby_get_proxypass: mysqld: <span class="nv">req</span><span class="o">=</span>site-a.local <span class="nv">res</span><span class="o">=</span>web1.local, client: 192.168.100.10, server: , request: <span class="s2">&#34;GET / HTTP/1.1&#34;</span>, host: <span class="s2">&#34;site-a.local&#34;</span>
+2016/07/13 16:06:49 <span class="o">[</span>info<span class="o">]</span> 26684#0: *1 mruby_get_proxypass: memcached: create cache <span class="nv">key</span><span class="o">=</span>site-a.local <span class="nv">val</span><span class="o">=</span>web1.local, client: 192.168.100.10, server: , request: <span class="s2">&#34;GET / HTTP/1.1&#34;</span>, host: <span class="s2">&#34;site-a.local&#34;</span>
+</code></pre></div><ul>
 <li>mysqldと再接続している。</li>
 </ul>
-
 <h3 id="今後の課題">今後の課題</h3>
-
 <ul>
 <li>コネクションを使いまわせることが確認できたので、それをしない場合とでどの程度パフォーマンスが向上したのかを測定する。</li>
 <li>現在の実装だと複数のmrubyスクリプトで同じmemcachedのIPアドレスなどの設定を持っている。これをどうにか設定ファイルなどに切り出せないか？もしくはこの設定すらもmruby_init_workerでmruby-userdataを使って設定情報を保持するでもいい気もする。</li>
 </ul>
-
 <h3 id="参考文献">参考文献</h3>
-
 <ul>
 <li><a href="https://github.com/matsumoto-r/mruby-userdata">matsumoto-r/mruby-userdata</a></li>
 <li><a href="http://lamanotrama.hateblo.jp/entry/2015/08/02/005930">ngx_mrubyを使って特定ホスト以外からのアクセスをメンテナンス画面にする</a></li>
@@ -650,7 +579,7 @@ tcp        0	  0 192.168.100.21:3306         192.168.100.10:51532        ESTABLI
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

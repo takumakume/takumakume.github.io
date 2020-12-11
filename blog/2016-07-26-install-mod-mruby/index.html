@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-07-26-install-mod-mruby/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,19 +196,12 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h3 id="はじめに">はじめに</h3>
-
+        <h3 id="はじめに">はじめに</h3>
 <p>こんばんは。GMOペパボの久米です。
 以前、「<a href="/blog/2016-04-11-try-install-ngx-mruby/">CentOS6で ngx_mruby + mruby-memcached + mruby-mysql をインストールした。</a>」という記事でプログラマブルに制御できるnginxの紹介をし、リバースプロキシの構築を行いました。</p>
-
 <p>本エントリでは、同様にプログラマブルに制御できるWEBサーバとしてApacheに <a href="https://twitter.com/matsumotory">@matsumotory</a>さん が作成している、 <a href="https://github.com/matsumoto-r/mod_mruby">mod_mruby</a> というモジュールを組み込みたいと思います。</p>
-
 <p>これにより、<a href="https://github.com/matsumoto-r/ngx_mruby">ngx_mruby</a> 同様にmrubyを使って動的にWEBサーバの設定を変更することができます。</p>
-
 <h3 id="環境">環境</h3>
-
 <table>
 <thead>
 <tr>
@@ -212,105 +209,65 @@ ga('send', 'pageview');
 <th>バージョン</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td>OS</td>
 <td>CentOS 6.6</td>
 </tr>
-
 <tr>
 <td>httpd</td>
 <td>2.2.15-54</td>
 </tr>
-
 <tr>
 <td>ruby</td>
 <td>1.9.3</td>
 </tr>
 </tbody>
 </table>
-
-<h3 id="必要なコンポーネント-ライブラリをインストール">必要なコンポーネント、ライブラリをインストール</h3>
-
-<pre><code class="language-sh">yum install -y httpd httpd-devel php git zlib zlib-devel pcre-devel bison openssl-devel readline-devel
-</code></pre>
-
-<h3 id="ruby-rbenv環境-をインストール">Ruby(rbenv環境)をインストール</h3>
-
-<h4 id="rbenv-ruby-buildをダウンロード">rbenv + ruby-buildをダウンロード</h4>
-
-<pre><code class="language-sh">git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+<h3 id="必要なコンポーネントライブラリをインストール">必要なコンポーネント、ライブラリをインストール</h3>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">yum install -y httpd httpd-devel php git zlib zlib-devel pcre-devel bison openssl-devel readline-devel
+</code></pre></div><h3 id="rubyrbenv環境をインストール">Ruby(rbenv環境)をインストール</h3>
+<h4 id="rbenv--ruby-buildをダウンロード">rbenv + ruby-buildをダウンロード</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-</code></pre>
-
-<h4 id="rbenvのpathの設定">rbenvのPATHの設定</h4>
-
-<pre><code class="language-sh">echo 'export PATH=&quot;$HOME/.rbenv/bin:$PATH&quot;' &gt;&gt; ~/.bash_profile
-echo 'eval &quot;$(rbenv init -)&quot;' &gt;&gt; ~/.bash_profile
-exec $SHELL -l
-</code></pre>
-
-<h4 id="rubyのバージョンを選択">rubyのバージョンを選択</h4>
-
+</code></pre></div><h4 id="rbenvのpathの設定">rbenvのPATHの設定</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">echo</span> <span class="s1">&#39;export PATH=&#34;$HOME/.rbenv/bin:$PATH&#34;&#39;</span> &gt;&gt; ~/.bash_profile
+<span class="nb">echo</span> <span class="s1">&#39;eval &#34;$(rbenv init -)&#34;&#39;</span> &gt;&gt; ~/.bash_profile
+<span class="nb">exec</span> <span class="nv">$SHELL</span> -l
+</code></pre></div><h4 id="rubyのバージョンを選択">rubyのバージョンを選択</h4>
 <ul>
 <li>今回は1.9.xの最新版を利用する。</li>
 </ul>
-
-<pre><code class="language-sh">rbenv install --list
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">rbenv install --list
 rbenv install 1.9.3-p551
 rbenv global 1.9.3-p551
-</code></pre>
-
-<h3 id="mod-mrubyのビルドに必要なrakeをインストール">mod_mrubyのビルドに必要なrakeをインストール</h3>
-
-<pre><code class="language-sh">rbenv exec gem install rake
-</code></pre>
-
-<h3 id="mod-mrubyをビルド">mod_mrubyをビルド</h3>
-
+</code></pre></div><h3 id="mod_mrubyのビルドに必要なrakeをインストール">mod_mrubyのビルドに必要なrakeをインストール</h3>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">rbenv <span class="nb">exec</span> gem install rake
+</code></pre></div><h3 id="mod_mrubyをビルド">mod_mrubyをビルド</h3>
 <h4 id="ソースをダウンロード">ソースをダウンロード</h4>
-
-<pre><code class="language-sh">cd /usr/local/src
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">cd</span> /usr/local/src
 git clone https://github.com/matsumoto-r/mod_mruby.git
-</code></pre>
-
-<h4 id="ビルド">ビルド</h4>
-
-<pre><code class="language-sh">cd mod_mruby
+</code></pre></div><h4 id="ビルド">ビルド</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">cd</span> mod_mruby
 sh ./test.sh
 sh ./build.sh
-</code></pre>
-
-<h3 id="httpdにmod-mrubyを組み込む">httpdにmod_mrubyを組み込む</h3>
-
-<pre><code class="language-sh">cp -p /usr/local/src/mod_mruby/src/.libs/mod_mruby.so /etc/httpd/modules/
+</code></pre></div><h3 id="httpdにmod_mrubyを組み込む">httpdにmod_mrubyを組み込む</h3>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">cp -p /usr/local/src/mod_mruby/src/.libs/mod_mruby.so /etc/httpd/modules/
 vi /etc/httpd/conf.d/mruby.conf
-</code></pre>
-
-<h5 id="mruby-conf">mruby.conf</h5>
-
-<pre><code class="language-sh">LoadModule mruby_module modules/mod_mruby.so
+</code></pre></div><h5 id="mrubyconf">mruby.conf</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">LoadModule mruby_module modules/mod_mruby.so
 &lt;Location /mruby-test&gt;
     mrubyHandlerMiddle /etc/httpd/lib/test.rb
 &lt;/Location&gt;
-</code></pre>
-
-<h3 id="動作確認">動作確認</h3>
-
-<pre><code class="language-sh">mkdir /etc/httpd/lib
+</code></pre></div><h3 id="動作確認">動作確認</h3>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">mkdir /etc/httpd/lib
 cp -p /usr/local/src/mod_mruby/test/test.rb /etc/httpd/lib/
 service httpd start
 curl http://127.0.0.1/mruby-test
-</code></pre>
-
-<h5 id="実行結果">実行結果</h5>
-
-<pre><code class="language-sh">(snip)
+</code></pre></div><h5 id="実行結果">実行結果</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="o">(</span>snip<span class="o">)</span>
 __Test Complete. Wellcome to mod_mruby world!!__
-</code></pre>
-
-<p>はろーーーmod_mruby!!!</p>
+</code></pre></div><p>はろーーーmod_mruby!!!</p>
 
       </article>
 
@@ -403,7 +360,7 @@ __Test Complete. Wellcome to mod_mruby world!!__
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

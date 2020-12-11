@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-08-17-mruby-ci/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,339 +196,261 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h3 id="はじめに">はじめに</h3>
-
+        <h3 id="はじめに">はじめに</h3>
 <p>こんばんは、GMOペパボの久米です。
 今回は「<a href="/blog/2016-08-17-mruby-mtest/">mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコードを書く</a>」でご紹介しましたmrubyのテストをより便利にしていきたいと思います。
 やり方を忘れないように備忘録的に記述します。</p>
-
 <h3 id="概要">概要</h3>
-
 <p>本エントリでは以下のことを目的としている。</p>
-
 <ul>
 <li>開発を行うにあたり、動作確認をより簡単に行えるようにする。</li>
 <li>継続的インテグレーションを行いたい。</li>
 </ul>
-
 <p>今回利用するコンポーネントは以下のような役割を担う。</p>
-
 <ul>
 <li>docker
-
 <ul>
 <li>mrubyの実行環境を即座に提供する</li>
-</ul></li>
+</ul>
+</li>
 <li>rake
-
 <ul>
 <li>実行環境であるdockerのビルドやテストの実行などのタスクを定義して簡単に呼び出せるようにする</li>
-</ul></li>
+</ul>
+</li>
 <li>travis-ci
-
 <ul>
 <li>github.comにpushした時に自動でrakeを実行してdockerのビルドやテストの実行を行う</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h3 id="本エントリで何ができるようになるか">本エントリで何ができるようになるか。</h3>
-
 <ul>
 <li>ソースコードをgithubにpushすることで、自動的にテストが実行されcommitに対してテスト結果を得ることができる。</li>
 <li>ローカルマシン上での開発時に簡単に動作確認を行える。</li>
 </ul>
-
-<h3 id="let-s-develop">Let&rsquo;s develop!!</h3>
-
+<h3 id="lets-develop">Let&rsquo;s develop!!</h3>
 <p>今回のテストは以下の様な動作を想定している。</p>
-
 <ul>
 <li>githubにコードをpush
-
 <ul>
 <li>travis-ciが通知を受け取る</li>
-</ul></li>
+</ul>
+</li>
 <li>travis-ciが &ldquo;rake&rdquo; コマンドを実行
-
 <ul>
 <li>dockerのbuildが実行される。</li>
 <li>dockerのbuild完了後にdockerの起動がされる。</li>
-</ul></li>
+</ul>
+</li>
 <li>Dockerfile内でRakefileおよびテスト対象コードをコンテナ内にマウントする。</li>
 <li>Dockerfile内で &ldquo;rake test&rdquo; を実行する。
-
 <ul>
 <li>&ldquo;rake test&rdquo; を実行すると、mruby-testを含んだmrubyのバイナリを使用してテストコードを実行する。</li>
 <li>テスト結果を得る。</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h5 id="まずはリポジトリを作成する">まずはリポジトリを作成する</h5>
-
 <p><a href="https://github.com">github.com</a>に「<a href="/blog/2016-08-17-mruby-mtest/">mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコードを書く</a>」こちらで書いたコードを、githubのリポジトリに上げます。
 本エントリではリポジトリ名を ci-test とします。</p>
-
 <p>[text]
 ci-test/
- └ src/
-   └ mruby.rb
+└ src/
+└ mruby.rb
 [/text]</p>
-
-<h5 id="mrubyのbuild-config-rbを作成する">mrubyのbuild_config.rbを作成する</h5>
-
+<h5 id="mrubyのbuild_configrbを作成する">mrubyのbuild_config.rbを作成する</h5>
 <p>[text]
 ci-test/
- └ src/
- | └ mruby.rb
- └ misc/
-   └ build_config.rb ★
+└ src/
+| └ mruby.rb
+└ misc/
+└ build_config.rb ★
 [/text]</p>
-
-<h6 id="build-config-rb">build_config.rb</h6>
-
+<h6 id="build_configrb">build_config.rb</h6>
 <p>[ruby]
 MRuby::Build.new do |conf|</p>
-
 <p>toolchain :gcc</p>
-
 <p>conf.gembox &lsquo;full-core&rsquo;</p>
-
 <p>conf.gem :github =&gt; &lsquo;iij/mruby-io&rsquo;
-  conf.gem :github =&gt; &lsquo;iij/mruby-env&rsquo;
-  conf.gem :github =&gt; &lsquo;iij/mruby-dir&rsquo;
-  conf.gem :github =&gt; &lsquo;iij/mruby-digest&rsquo;
-  conf.gem :github =&gt; &lsquo;iij/mruby-process&rsquo;
-  conf.gem :github =&gt; &lsquo;iij/mruby-pack&rsquo;
-  conf.gem :github =&gt; &lsquo;iij/mruby-socket&rsquo;
-  conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-sleep&rsquo;
-  conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-userdata&rsquo;
-  conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-uname&rsquo;
-  conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-mutex&rsquo;
-  conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-cache&rsquo;</p>
-
+conf.gem :github =&gt; &lsquo;iij/mruby-env&rsquo;
+conf.gem :github =&gt; &lsquo;iij/mruby-dir&rsquo;
+conf.gem :github =&gt; &lsquo;iij/mruby-digest&rsquo;
+conf.gem :github =&gt; &lsquo;iij/mruby-process&rsquo;
+conf.gem :github =&gt; &lsquo;iij/mruby-pack&rsquo;
+conf.gem :github =&gt; &lsquo;iij/mruby-socket&rsquo;
+conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-sleep&rsquo;
+conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-userdata&rsquo;
+conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-uname&rsquo;
+conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-mutex&rsquo;
+conf.gem :github =&gt; &lsquo;matsumoto-r/mruby-cache&rsquo;</p>
 <p>conf.gem :github =&gt; &lsquo;iij/mruby-mtest&rsquo;
 end
 [/ruby]</p>
-
 <ul>
 <li>このファイルはdockerでmrubyをビルドする際にコンテナ内に放り込む</li>
 </ul>
-
 <h5 id="ビルド環境であるdockerfileを作成する">ビルド環境であるDockerfileを作成する</h5>
-
 <p>[text]
 ci-test/
- └ src/
- |  └ mruby.rb
- └ misc/
- | └ build_config.rb
- └ Dockerfile ★
+└ src/
+|  └ mruby.rb
+└ misc/
+| └ build_config.rb
+└ Dockerfile ★
 [/text]</p>
-
 <h6 id="dockerfile">Dockerfile</h6>
-
 <p>[ruby]
 FROM centos:latest</p>
-
-<p>RUN yum install -y <br />
-  gcc <br />
-  git <br />
-  rubygems <br />
-  openssl-devel <br />
-  curl <br />
-  bison</p>
-
+<p>RUN yum install -y<br>
+gcc<br>
+git<br>
+rubygems<br>
+openssl-devel<br>
+curl<br>
+bison</p>
 <p>RUN curl <a href="http://curl.haxx.se/ca/cacert.pem">http://curl.haxx.se/ca/cacert.pem</a> -o /opt/cacert.pem
 ENV SSL_CERT_FILE=/opt/cacert.pem</p>
-
 <p>RUN gem install bundler
 RUN gem install mgem
 RUN gem install rake</p>
-
 <p>RUN git clone <a href="https://github.com/mruby/mruby.git">https://github.com/mruby/mruby.git</a></p>
-
-<h1 id="ローカルのbuild-config-rbをmrubyのソース内に入れる">ローカルのbuild_config.rbをmrubyのソース内に入れる</h1>
-
+<h1 id="ローカルのbuild_configrbをmrubyのソース内に入れる">ローカルのbuild_config.rbをmrubyのソース内に入れる</h1>
 <p>ADD misc/build_config.rb mruby/</p>
-
 <h1 id="ビルドする">ビルドする</h1>
-
 <p>RUN cd mruby &amp;&amp; rake</p>
-
 <h1 id="パスが通っているところに生成されたmrubyのバイナリをコピーする">パスが通っているところに生成されたmrubyのバイナリをコピーする</h1>
-
 <p>RUN cp mruby/bin/mruby /usr/local/bin
 [/ruby]</p>
-
 <h5 id="dockerの動作確認">dockerの動作確認</h5>
-
 <p>[shell]
 docker build -t  takumakume:ci-test .
 docker run   -it takumakume:ci-test /bin/bash
 [/shell]</p>
-
 <h6 id="docker内で以下を実行">docker内で以下を実行</h6>
-
 <p>[shell]
 [root@f0ce89c368c3 tmp]# mruby &ndash;version
 mruby 1.2.0 (2015-11-17)
 [/shell]</p>
-
 <ul>
 <li>正常にdocker内でmrubyが実行できればOK</li>
 </ul>
-
 <p>問題がなければ、Dockerfileに以下を追記</p>
-
 <p>[ruby]
 ADD . /tmp
 WORKDIR /tmp
 CMD rake test
 [/ruby]</p>
-
 <ul>
 <li>ローカルのファイルをコンテナ内の &ldquo;/tmp&rdquo; にマウント</li>
 <li>&ldquo;rake test&rdquo; コマンドを実行
-
 <ul>
 <li>&ldquo;rake build&rdquo; -&gt; &ldquo;rake run&rdquo; の順に実行され、dockerが起動した最後の処理にテストを実行するようにする。</li>
 <li>こうすることで、travis-ciから &ldquo;rake&rdquo; を実行するだけで、dockerのbuildとテストの実行ができる。</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h5 id="rakefileの作成">Rakefileの作成</h5>
-
 <p>[text]
 ci-test/
- └ src/
- |  └ mruby.rb
- └ misc/
- | └ build_config.rb
- ├ Dockerfile
- └ Rakefile ★
+└ src/
+|  └ mruby.rb
+└ misc/
+| └ build_config.rb
+├ Dockerfile
+└ Rakefile ★
 [/text]</p>
-
 <h6 id="rakefile">Rakefile</h6>
-
 <p>[ruby]
 task default: :run</p>
-
 <p>desc &ldquo;build&rdquo;
 task :build do
-  sh &ldquo;docker build -t takumakume:ci-test .&rdquo;
+sh &ldquo;docker build -t takumakume:ci-test .&rdquo;
 end</p>
-
 <p>desc &ldquo;run&rdquo;
 task :run =&gt; [:build] do
-  sh &ldquo;docker run -t takumakume:ci-test&rdquo;
+sh &ldquo;docker run -t takumakume:ci-test&rdquo;
 end</p>
-
 <p>desc &ldquo;test&rdquo;
 task :test do
-  sh &ldquo;mruby /tmp/src/mruby.rb&rdquo;
+sh &ldquo;mruby /tmp/src/mruby.rb&rdquo;
 end
 [/ruby]</p>
-
 <ul>
 <li>&ldquo;rake&rdquo; コマンドを引数無しで実行した場合にテストが実行されるようにする。</li>
 <li>&ldquo;rake run&rdquo; でDockerを立ち上げる。（その前に rake build が実行されてコンテナが作成される）</li>
 <li>&ldquo;rake test&rdquo; を実行すると対象コードをmrubyバイナリで実行してテストする。</li>
 </ul>
-
 <h5 id="rake動作確認">rake動作確認</h5>
-
 <p>[shell]
 rake
 [/shell]</p>
-
-<p><a href="snip">shell</a>
+<p>[shell]
+(snip)
 Successfully built b83c3f8f877b
 docker run -t takumakume:ci-test
 mruby /tmp/src/mruby.rb</p>
-
 <h1 id="running-tests">Running tests:</h1>
-
 <p>..</p>
-
 <p>Finished tests in 0.000285s, 7017.5439 tests/s, 7017.5439 assertions/s.
 [/shell]</p>
-
 <ul>
 <li>テスト成功！</li>
 </ul>
-
 <h5 id="後はgithubにpushした時にtravis-ciがテストを実行してくれるように設定">後はgithubにpushした時にtravis-ciがテストを実行してくれるように設定</h5>
-
 <p>[text]
 ci-test/
- └ src/
- |  └ mruby.rb
- └ misc/
- | └ build_config.rb
- ├ Dockerfile
- ├ Rakefile
- ├ Gemfile ★
- └ .travis.yml ★
+└ src/
+|  └ mruby.rb
+└ misc/
+| └ build_config.rb
+├ Dockerfile
+├ Rakefile
+├ Gemfile ★
+└ .travis.yml ★
 [/text]</p>
-
 <h6 id="gemfile">Gemfile</h6>
-
 <p>[ruby]
 gem &ldquo;rake&rdquo;
 [/ruby]</p>
-
-<h6 id="travis-yml">.travis.yml</h6>
-
+<h6 id="travisyml">.travis.yml</h6>
 <p>[ruby]
 language: ruby
 sudo: required
-services:
-  - docker
-before_install:
-  - bundle install
-script:
-  - bundle exec rake
-[/ruby]</p>
-
+services:</p>
+<ul>
+<li>docker
+before_install:</li>
+<li>bundle install
+script:</li>
+<li>bundle exec rake
+[/ruby]</li>
+</ul>
 <h5 id="travis-ciに-ci-test-リポジトリを登録する">travis-ciに &ldquo;ci-test&rdquo; リポジトリを登録する。</h5>
-
 <p>GUIでごにょる</p>
-
 <h5 id="githubにpushしてciが走ることを確認">githubにpushしてCIが走ることを確認！！</h5>
-
 <p>[shell]
 git add *
 git add .travis.yml
 git push origin master
 [/shell]</p>
-
 <h5 id="ローカルマシンで開発するときは">ローカルマシンで開発するときは</h5>
-
 <p>Rakefile に以下のような記述を追加しておけば、 &ldquo;rake dev&rdquo; と実行するだけでソースファイルをマウントした実行環境にアクセスできる。</p>
-
 <p>[ruby]
 desc &ldquo;dev&rdquo;
 task :dev do
-  sh &ldquo;docker run -v <code>pwd</code>:/tmp -it takumakume:ci-test /bin/bash&rdquo;
+sh &ldquo;docker run -v <code>pwd</code>:/tmp -it takumakume:ci-test /bin/bash&rdquo;
 end
 [/ruby]</p>
-
 <p>ソースファイルを変更するたびにコンテナ内で</p>
-
 <p>[ruby]
 rake test
 [/ruby]</p>
-
 <p>や</p>
-
 <p>[ruby]
 mruby /tmp/src/hoge.rb
 [/ruby]</p>
-
 <p>を実行することで素早く動作確認を行うことができる！</p>
-
 <p>このやり方さえ覚えれば色々なものにCI適応できる！</p>
 
       </article>
@@ -618,7 +544,7 @@ mruby /tmp/src/hoge.rb
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

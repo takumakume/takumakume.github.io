@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-04-11-try-install-ngx-mruby/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,23 +196,16 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<p>こんばんは。GMOペパボ試用期間の久米です。</p>
-
+        <p>こんばんは。GMOペパボ試用期間の久米です。</p>
 <p>以下の要件のリバースプロキシサーバを作成したいため、<a href="https://github.com/matsumoto-r/ngx_mruby">ngx_mruby</a>を触ってみました。</p>
-
 <ul>
 <li>リクエストホスト名に応じて転送先のサーバを変更する。</li>
 <li>ホスト名と転送先サーバのひも付けの情報をMemcachedのサーバから取得する。</li>
 <li>キャッシュが存在していなければMySQLデータベースから取得し、キャッシュを書き込む。</li>
 </ul>
-
 <p>この要件を <a href="https://github.com/matsumoto-r/ngx_mruby">ngx_mruby</a> + <a href="https://github.com/matsumoto-r/mruby-memcached">mruby-memcached</a> + <a href="https://github.com/mattn/mruby-mysql">mruby-mysql</a> で満たすべく、
 本エントリではインストール方法について記載します。</p>
-
 <h4 id="環境">環境</h4>
-
 <table>
 <thead>
 <tr>
@@ -216,68 +213,47 @@ ga('send', 'pageview');
 <th>バージョン</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td>OS</td>
 <td>CentOS 6.6</td>
 </tr>
-
 <tr>
 <td>kernel</td>
 <td>2.6.32-504.el6.x86_64</td>
 </tr>
-
 <tr>
 <td>Ruby</td>
 <td>2.2.4</td>
 </tr>
-
 <tr>
 <td>nginx</td>
 <td>1.9.14</td>
 </tr>
-
 <tr>
 <td>ngx_mruby</td>
 <td>1.1.17</td>
 </tr>
 </tbody>
 </table>
-
 <h4 id="今回はルートユーザで作業を行います">今回はルートユーザで作業を行います。</h4>
-
-<pre><code class="language-sh">sudo su -
-</code></pre>
-
-<h3 id="ruby-rbenv-環境を構築">Ruby (rbenv) 環境を構築</h3>
-
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">sudo su -
+</code></pre></div><h3 id="ruby-rbenv-環境を構築">Ruby (rbenv) 環境を構築</h3>
 <h4 id="必要なライブラリをインストール">必要なライブラリをインストール</h4>
-
-<pre><code class="language-sh">yum install -y git openssl-devel readline-devel zlib-devel
-</code></pre>
-
-<h4 id="rbenv-ruby-buildをダウンロード">rbenv + ruby-buildをダウンロード</h4>
-
-<pre><code class="language-sh">git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">yum install -y git openssl-devel readline-devel zlib-devel
+</code></pre></div><h4 id="rbenv--ruby-buildをダウンロード">rbenv + ruby-buildをダウンロード</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-</code></pre>
-
-<h4 id="rbenvのpathの設定">rbenvのPATHの設定</h4>
-
-<pre><code class="language-sh">echo 'export PATH=&quot;$HOME/.rbenv/bin:$PATH&quot;' &gt;&gt; ~/.bash_profile
-echo 'eval &quot;$(rbenv init -)&quot;' &gt;&gt; ~/.bash_profile
-exec $SHELL -l
-</code></pre>
-
-<h4 id="rubyをインストール">Rubyをインストール</h4>
-
+</code></pre></div><h4 id="rbenvのpathの設定">rbenvのPATHの設定</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">echo</span> <span class="s1">&#39;export PATH=&#34;$HOME/.rbenv/bin:$PATH&#34;&#39;</span> &gt;&gt; ~/.bash_profile
+<span class="nb">echo</span> <span class="s1">&#39;eval &#34;$(rbenv init -)&#34;&#39;</span> &gt;&gt; ~/.bash_profile
+<span class="nb">exec</span> <span class="nv">$SHELL</span> -l
+</code></pre></div><h4 id="rubyをインストール">Rubyをインストール</h4>
 <ul>
 <li>インストールできるRubyのバージョンを確認</li>
-<li>今回は&rdquo;2.2.4&rdquo;をチョイス</li>
+<li>今回は&quot;2.2.4&quot;をチョイス</li>
 </ul>
-
-<pre><code class="language-sh">rbenv install --list
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">rbenv install --list
  :
 2.2.3
 2.2.4
@@ -287,205 +263,139 @@ exec $SHELL -l
 2.3.0
 2.4.0-dev
  :
-</code></pre>
-
-<ul>
+</code></pre></div><ul>
 <li>rbenvでRubyをインストールする。</li>
 </ul>
-
-<pre><code class="language-sh">rbenv install 2.2.4
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">rbenv install 2.2.4
 rbenv global 2.2.4
-</code></pre>
-
-<ul>
+</code></pre></div><ul>
 <li>バージョン確認</li>
 </ul>
-
-<pre><code class="language-sh">rbenv versions
-* 2.2.4 (set by /root/.rbenv/version)
-</code></pre>
-
-<h4 id="serverspecをインストール">serverspecをインストール</h4>
-
-<pre><code class="language-sh">rbenv exec gem install serverspec
-</code></pre>
-
-<h3 id="ngx-mruby-mruby-memecached-mruby-mysql-をインストール">ngx_mruby + mruby_memecached + mruby_mysql をインストール</h3>
-
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">rbenv versions
+* 2.2.4 <span class="o">(</span><span class="nb">set</span> by /root/.rbenv/version<span class="o">)</span>
+</code></pre></div><h4 id="serverspecをインストール">serverspecをインストール</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">rbenv <span class="nb">exec</span> gem install serverspec
+</code></pre></div><h3 id="ngx_mruby--mruby_memecached--mruby_mysql-をインストール">ngx_mruby + mruby_memecached + mruby_mysql をインストール</h3>
 <h4 id="必要なライブラリのインストールとソースのダウンロード">必要なライブラリのインストールとソースのダウンロード</h4>
-
 <ul>
 <li>mruby-memcachedに必要なライブラリ</li>
 </ul>
-
-<pre><code class="language-sh">yum install -y pcre-devel bison
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">yum install -y pcre-devel bison
 rpm --import http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6
 rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 rpm --import http://rpms.famillecollet.com/RPM-GPG-KEY-remi
 rpm -ivh http://rpms.famillecollet.com/enterprise/remi-release-6.rpm
-yum -y install --enablerepo=remi libmemcached-last-devel
-</code></pre>
-
-<ul>
+yum -y install --enablerepo<span class="o">=</span>remi libmemcached-last-devel
+</code></pre></div><ul>
 <li>mruby-mysqlに必要なライブラリ</li>
 </ul>
-
-<pre><code class="language-sh">yum install -y mysql mysql-devel
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">yum install -y mysql mysql-devel
+</code></pre></div><ul>
 <li>nginx, ngx_mrubyのソースをダウンロード</li>
 </ul>
-
-<pre><code class="language-sh">mkdir /usr/local/src/nginx &amp;&amp; cd /usr/local/src/nginx
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">mkdir /usr/local/src/nginx <span class="o">&amp;&amp;</span> <span class="nb">cd</span> /usr/local/src/nginx
 git clone https://github.com/matsumoto-r/ngx_mruby.git
 curl -O http://nginx.org/download/nginx-1.9.14.tar.gz
 tar zxf nginx-1.9.14.tar.gz
-</code></pre>
-
-<h4 id="ビルド">ビルド</h4>
-
+</code></pre></div><h4 id="ビルド">ビルド</h4>
 <p>以下を参考にして、ビルドしました。
 <a href="https://github.com/matsumoto-r/ngx_mruby/wiki/Install">matsumoto-r/ngx_mruby Wiki Install</a></p>
-
 <ul>
 <li>ngx_mubyは &ldquo;build_config.rb&rdquo; で利用するモジュールを選択してビルドする仕組みです。</li>
 </ul>
-
-<pre><code class="language-sh">cd ngx_mruby &amp;&amp; vi build_config.rb
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">cd</span> ngx_mruby <span class="o">&amp;&amp;</span> vi build_config.rb
+</code></pre></div><ul>
 <li>以下のモジュールもビルドするようにコメントアウトを外します。
-
 <ul>
 <li>mruby-memcached</li>
 <li>mruby-mysql</li>
-</ul></li>
 </ul>
-
-<pre><code class="language-sh"> :
-conf.gem :github =&gt; 'matsumoto-r/mruby-memcached'
+</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"> :
+conf.gem :github <span class="o">=</span>&gt; <span class="s1">&#39;matsumoto-r/mruby-memcached&#39;</span>
  :
-conf.gem :github =&gt; 'mattn/mruby-mysql'
+conf.gem :github <span class="o">=</span>&gt; <span class="s1">&#39;mattn/mruby-mysql&#39;</span>
  :
-</code></pre>
-
-<ul>
+</code></pre></div><ul>
 <li>プレフィックスとnginxのソース配置先を環境変数に設定して build.sh を実行します。</li>
 </ul>
-
-<pre><code class="language-sh">NGINX_CONFIG_OPT_ENV='--prefix=/usr/local/nginx' NGINX_SRC_ENV='/usr/local/src/nginx/nginx-1.9.14/' sh build.sh
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nv">NGINX_CONFIG_OPT_ENV</span><span class="o">=</span><span class="s1">&#39;--prefix=/usr/local/nginx&#39;</span> <span class="nv">NGINX_SRC_ENV</span><span class="o">=</span><span class="s1">&#39;/usr/local/src/nginx/nginx-1.9.14/&#39;</span> sh build.sh
  :
 ngx_mruby building ... Done
 build.sh ... successful
-</code></pre>
-
-<ul>
+</code></pre></div><ul>
 <li>インストール</li>
 </ul>
-
-<pre><code class="language-sh">make install
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">make install
+</code></pre></div><ul>
 <li>動作確認用の記述を nginx.conf に設定します。</li>
 </ul>
-
-<pre><code class="language-sh">vi /usr/local/nginx/conf/nginx.conf
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">vi /usr/local/nginx/conf/nginx.conf
+</code></pre></div><ul>
 <li>location /mruby .. を設定</li>
 </ul>
-
-<pre><code class="language-sh"> :
-http {
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"> :
+http <span class="o">{</span>
    :
-  server {
+  server <span class="o">{</span>
      :
-    location /mruby {
-      mruby_content_handler '/usr/local/nginx/html/unified_hello.rb';
-    }
+    location /mruby <span class="o">{</span>
+      mruby_content_handler <span class="s1">&#39;/usr/local/nginx/html/unified_hello.rb&#39;</span><span class="p">;</span>
+    <span class="o">}</span>
      :
-  }
+  <span class="o">}</span>
    :
-}
+<span class="o">}</span>
  :
-</code></pre>
-
-<ul>
+</code></pre></div><ul>
 <li>スクリプトを配置</li>
 </ul>
-
-<pre><code class="language-sh">vi /usr/local/nginx/html/unified_hello.rb
-</code></pre>
-
-<pre><code class="language-sh">if server_name == &quot;NGINX&quot;
-  Server = Nginx
-elsif server_name == &quot;Apache&quot;
-  Server = Apache
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">vi /usr/local/nginx/html/unified_hello.rb
+</code></pre></div><div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="k">if</span> <span class="nv">server_name</span> <span class="o">==</span> <span class="s2">&#34;NGINX&#34;</span>
+  <span class="nv">Server</span> <span class="o">=</span> Nginx
+elsif <span class="nv">server_name</span> <span class="o">==</span> <span class="s2">&#34;Apache&#34;</span>
+  <span class="nv">Server</span> <span class="o">=</span> Apache
 end
 
-Server::rputs &quot;Hello #{Server::module_name}/#{Server::module_version} world!&quot;
-</code></pre>
-
-<h3 id="起動の設定">起動の設定</h3>
-
+Server::rputs <span class="s2">&#34;Hello #{Server::module_name}/#{Server::module_version} world!&#34;</span>
+</code></pre></div><h3 id="起動の設定">起動の設定</h3>
 <ul>
 <li>initスクリプトを作成します</li>
 </ul>
-
-<pre><code class="language-sh">vi /etc/init.d/nginx
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">vi /etc/init.d/nginx
+</code></pre></div><ul>
 <li>以下のURLからコピーしてきます</li>
 </ul>
-
 <blockquote>
 <p>Red Hat NGINX Init Script
 <a href="https://www.nginx.com/resources/wiki/start/topics/examples/redhatnginxinit/">https://www.nginx.com/resources/wiki/start/topics/examples/redhatnginxinit/</a></p>
 </blockquote>
-
 <ul>
 <li>環境に合わせてパスを修正します</li>
 </ul>
-
-<pre><code class="language-sh"> :
-#nginx=&quot;/usr/sbin/nginx&quot;
-nginx=&quot;/usr/local/nginx/sbin/nginx&quot;
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"> :
+<span class="c1">#nginx=&#34;/usr/sbin/nginx&#34;</span>
+<span class="nv">nginx</span><span class="o">=</span><span class="s2">&#34;/usr/local/nginx/sbin/nginx&#34;</span>
  :
-#NGINX_CONF_FILE=&quot;/etc/nginx/nginx.conf&quot;
-NGINX_CONF_FILE=&quot;/usr/local/nginx/conf/nginx.conf&quot;
+<span class="c1">#NGINX_CONF_FILE=&#34;/etc/nginx/nginx.conf&#34;</span>
+<span class="nv">NGINX_CONF_FILE</span><span class="o">=</span><span class="s2">&#34;/usr/local/nginx/conf/nginx.conf&#34;</span>
  :
-</code></pre>
-
-<ul>
+</code></pre></div><ul>
 <li>起動スクリプトの設定</li>
 </ul>
-
-<pre><code class="language-sh">chmod +x /etc/init.d/nginx
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">chmod +x /etc/init.d/nginx
 chkconfig --add nginx
 chkconfig nginx on
-</code></pre>
-
-<ul>
+</code></pre></div><ul>
 <li>起動してみる</li>
 </ul>
-
-<pre><code class="language-sh">service nginx start
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">service nginx start
+</code></pre></div><ul>
 <li>動作確認</li>
 </ul>
-
-<pre><code class="language-sh">curl http://127.0.0.1/mruby
-</code></pre>
-
-<p>Hello ngx_mruby/1.17.0 world!</p>
-
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">curl http://127.0.0.1/mruby
+</code></pre></div><p>Hello ngx_mruby/1.17.0 world!</p>
 <p>はろーー！ngx_mruby！！</p>
 
       </article>
@@ -575,7 +485,7 @@ chkconfig nginx on
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

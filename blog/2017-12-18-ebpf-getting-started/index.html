@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2017-12-18-ebpf-getting-started/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,129 +196,87 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<p><a href="https://qiita.com/advent-calendar/2017/pepabo">GMOペパボ Advent Calendar 2017</a> の18日目の記事です。</p>
-
+        <p><a href="https://qiita.com/advent-calendar/2017/pepabo">GMOペパボ Advent Calendar 2017</a> の18日目の記事です。</p>
 <p><a href="https://kixs.connpass.com/event/69643/">九州インフラ交流勉強会(Kixs) Vol.006</a> というイベントで「eBPF入門」というタイトルで登壇した。
 当日のスライドは以下。</p>
-
-<script async class="speakerdeck-embed" data-id="863e9f0eb2a64ac3bbb00f09ff5250bf" data-ratio="1.77777777777778" src="//speakerdeck.com/assets/embed.js"></script>
-
-<p><code>BPF</code> とは <u>B</u>erkeley <u>P</u>acket <u>F</u>ilter の略で、 <code>tcpdump(1)</code> や <code>seccomp(2)</code> などに使われていてパケットやシステムコールのフィルタリングをするためのインターフェイスとして利用されている。
+<!-- raw HTML omitted -->
+<p><code>BPF</code> とは <!-- raw HTML omitted -->B<!-- raw HTML omitted -->erkeley <!-- raw HTML omitted -->P<!-- raw HTML omitted -->acket <!-- raw HTML omitted -->F<!-- raw HTML omitted -->ilter の略で、 <code>tcpdump(1)</code> や <code>seccomp(2)</code> などに使われていてパケットやシステムコールのフィルタリングをするためのインターフェイスとして利用されている。
 仕組みとしては、 Userspace で 作成した Bytecode を Kernel 内部で実行することでそれらを実現している。スライドにて図解しているのでぜひご覧いただければと思います。</p>
-
-<p>今回のスライドは「eBPF(<u>E</u>xtended <u>B</u>erkeley <u>P</u>acket <u>F</u>ilter)入門」ということで拡張されたBPFの機能の一部や仕組みについてを触れています。</p>
-
+<p>今回のスライドは「eBPF(<!-- raw HTML omitted -->E<!-- raw HTML omitted -->xtended <!-- raw HTML omitted -->B<!-- raw HTML omitted -->erkeley <!-- raw HTML omitted -->P<!-- raw HTML omitted -->acket <!-- raw HTML omitted -->F<!-- raw HTML omitted -->ilter)入門」ということで拡張されたBPFの機能の一部や仕組みについてを触れています。</p>
 <p>本エントリでは、学習の背景や調査した内容と今後のやっていきについて書く。</p>
-
 <h2 id="ebpfを学習するに至った背景">eBPFを学習するに至った背景</h2>
-
 <p>仕事で大規模ホスティング環境の運用を行っていく中で、お客様にお貸ししている共有サーバが高負荷状態になるがその原因が掴みづらい問題がしばしば発生していた。</p>
-
 <p>10月にGMOペパボにて開催された、<a href="https://pepabo.connpass.com/event/65932/">ペパボ・はてな技術大会@福岡</a> で <a href="https://speakerdeck.com/takumakume/hosuteinguniokeruan-ding-yun-yong-falsetamefalseakusesukontororushou-fa">ホスティングにおける安定運用のためのアクセスコントロール手法</a> というタイトルで登壇した日のこと。</p>
-
 <p>イベント後の懇親会で、ホスティングの高負荷原因が掴みづらいという話をしていたところ、はてなの <a href="https://twitter.com/yoyogidesaiz">@yoyogidesaiz</a> さんより <code>eBPF</code> の存在を教えていただいたことが始まりだった。</p>
-
 <h2 id="bpfについて学習">BPFについて学習</h2>
-
 <p>当初、 <code>BPF</code> について全く知見がなく <code>tcpdump(1)</code> に使われていることすら知らない状況だった。まずはBPFについて知ることが必要だったため以下を参考にした。</p>
-
 <ul>
 <li>BPF
-
 <ul>
 <li><a href="http://www.tcpdump.org/papers/bpf-usenix93.pdf">The BSD Packet Filter: A New Architecture for User-level Packet Capture</a></li>
-</ul></li>
+</ul>
+</li>
 <li>tcpdump
-
 <ul>
 <li><a href="https://sharkfestus.wireshark.org/sharkfest.11/presentations/McCanne-Sharkfest'11_Keynote_Address.pdf">libpcap: An Architecture and Op2miza2on Methodology for Packet Capture</a></li>
-</ul></li>
+</ul>
+</li>
 <li>seccomp
-
 <ul>
 <li><a href="http://udzura.hatenablog.jp/entry/2016/11/18/160020">seccompをmrubyで試す</a></li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h2 id="ebpfについて学習">eBPFについて学習</h2>
-
 <p>まずは、 eBPF が ClassicBPF(以下cBPF) に比べて何が違うのか、既存の手法に比べて何が優位なのか、何ができそうかを調べていった。
 調査をしていくと eBPF は日本語の情報があまりなく、 Brendan Gregg 氏が多くの情報を公開してくださっていたためその付近を調べた。</p>
-
 <ul>
 <li><a href="https://www.slideshare.net/brendangregg/bpf-tracing-and-more">BPF: Tracing and more</a></li>
 <li><a href="http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html">eBPF: One Small Step</a></li>
 </ul>
-
 <p>Kernelのヘッダファイルを確認すると、<a href="https://github.com/torvalds/linux/blob/v4.14/include/trace/events/bpf.h#L12">この</a>のように多くのことができるようだった。</p>
-
-<pre><code class="language-c">#define __PROG_TYPE_MAP(FN)	\
-	FN(SOCKET_FILTER)	\
-	FN(KPROBE)		\
-	FN(SCHED_CLS)		\
-	FN(SCHED_ACT)		\
-	FN(TRACEPOINT)		\
-	FN(XDP)			\
-	FN(PERF_EVENT)		\
-	FN(CGROUP_SKB)		\
-	FN(CGROUP_SOCK)		\
-	FN(LWT_IN)		\
-	FN(LWT_OUT)		\
-	FN(LWT_XMIT)
-</code></pre>
-
-<p>今回は、イメージが付きやすかった、Linux Kernelのトレース <code>KPROBE</code> と、パケットの制御 <code>XDP</code> に絞って調査することにした。</p>
-
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="cp">#define __PROG_TYPE_MAP(FN)	\
+</span><span class="cp">	FN(SOCKET_FILTER)	\
+</span><span class="cp">	FN(KPROBE)		\
+</span><span class="cp">	FN(SCHED_CLS)		\
+</span><span class="cp">	FN(SCHED_ACT)		\
+</span><span class="cp">	FN(TRACEPOINT)		\
+</span><span class="cp">	FN(XDP)			\
+</span><span class="cp">	FN(PERF_EVENT)		\
+</span><span class="cp">	FN(CGROUP_SKB)		\
+</span><span class="cp">	FN(CGROUP_SOCK)		\
+</span><span class="cp">	FN(LWT_IN)		\
+</span><span class="cp">	FN(LWT_OUT)		\
+</span><span class="cp">	FN(LWT_XMIT)
+</span></code></pre></div><p>今回は、イメージが付きやすかった、Linux Kernelのトレース <code>KPROBE</code> と、パケットの制御 <code>XDP</code> に絞って調査することにした。</p>
 <p>また、eBPFを利用したツール郡として <a href="https://github.com/iovisor/bcc">iovisor/bcc</a> というPythonのバインディング実装があったためソースコードを参考にした。
 Linux Kernel にも多くの <a href="https://github.com/torvalds/linux/tree/v4.14/samples/bpf">サンプルコード</a> が同梱されていて、動作イメージを想像しやすかった。</p>
-
 <blockquote>
 <p>まずは、 eBPF が ClassicBPF(以下cBPF) に比べて何が違うのか、既存の手法に比べて何が優位なのか、何ができそうかを調べていった。</p>
 </blockquote>
-
 <p>上記についてはスライドを是非ご覧ください。</p>
-
-<h3 id="余談-トレースといえば-strace-1-じゃん">【余談】トレースといえば <code>strace(1)</code> じゃん！</h3>
-
+<h3 id="余談トレースといえば-strace1-じゃん">【余談】トレースといえば <code>strace(1)</code> じゃん！</h3>
 <p>とか思って、 <code>strace(1)</code> の仕組みを調べてみたけどBPFとは関係なかった。せっかく動作内容を調べたのでここに貼っておく。</p>
-
-<p><img src="/img/2017-12-18/strace.png" alt="strace" /></p>
-
+<p><img src="/img/2017-12-18/strace.png" alt="strace"></p>
 <p><code>ptrace(2)</code> というシステムコールがあり、解析対象プロセスにattachすることができる。
 attach先はシステムコールを実行してから解析が終わるまでの間は瞬間的にプロセスが停止するようだった。</p>
-
 <h2 id="既存の技術についても学習機会が多かった">既存の技術についても学習機会が多かった</h2>
-
 <p>今回学習した範囲は、kprobeやuprobeを使った動的トレースや、XDPというパケット制御だった。</p>
-
 <blockquote>
 <p>kprobeやuprobeを使った動的トレース</p>
 </blockquote>
-
 <p>こちらについては、そもそも <code>kprobe</code> 自体ほとんど知らなかったので、存在や仕組みを知ることができた。</p>
-
 <blockquote>
 <p>XDPというパケット制御</p>
 </blockquote>
-
 <p>こちらについては、連想されるものとして <code>iptables</code> や <code>cBPF</code> があるが、eBPFがどう優れているかを調査するとおのずとその仕組みを学ぶことになるので非常に有意義だった。</p>
-
 <h2 id="発表後のフィードバックから得られたこと">発表後のフィードバックから得られたこと</h2>
-
 <p>例えば、KernelやUserspaceの動的トレースとしては <code>systemtap</code> など色々なツールがある。
 調査当初ちらちらと見ていたが詳しいところが分かっていないのでeBPFがどこまで有用なのか判断がつかない場面があった。</p>
-
 <p>これまで、あまり触れてこなかった既存のツールの仕組みやできることを把握していかねばならないと感じている。</p>
-
 <p>既存のツール郡とコンポーネントのマッピングについては、 Brendan Gregg 氏の以下のツイートが参考になりそうなので今後学習していく。</p>
-
-<p><blockquote class="twitter-tweet" data-lang="ja"><p lang="en" dir="ltr">updated Linux tools diagram (PNG &amp; SVG) with recent bcc additions <a href="https://t.co/tMyCAxSzAS">https://t.co/tMyCAxSzAS</a> <a href="https://t.co/ek5CMy3oUU">pic.twitter.com/ek5CMy3oUU</a></p>&mdash; Brendan Gregg (@brendangregg) <a href="https://twitter.com/brendangregg/status/789923778960633856?ref_src=twsrc%5Etfw">2016年10月22日</a></blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
-
+<!-- raw HTML omitted -->
 <h3 id="今後について">今後について</h3>
-
 <ul>
 <li>eBPFについては、まだまだ触り部分しか触れていないので継続して調べていく。</li>
 <li>eBPFの有用性について、既存の技術を理解した上で語れるようになること。</li>
@@ -412,7 +374,7 @@ attach先はシステムコールを実行してから解析が終わるまで�
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

@@ -1,22 +1,18 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>takumakume pages</title>
     <link>/</link>
     <description>Recent content on takumakume pages</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 02 May 2018 09:54:10 +0900</lastBuildDate>
-    
-	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Wed, 02 May 2018 09:54:10 +0900</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>ngx_mruby v2 の新機能を見る</title>
       <link>/blog/2018-05-02-ngx_mruby_v2/</link>
       <pubDate>Wed, 02 May 2018 09:54:10 +0900</pubDate>
       
       <guid>/blog/2018-05-02-ngx_mruby_v2/</guid>
-      <description>@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 ngx_mrubyのv2-devブラ</description>
+      <description>@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 機能としては、大きく以下のような追加</description>
     </item>
     
     <item>
@@ -178,7 +174,7 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/about/</guid>
-      <description>Takuma Kume Slides 2017 12&amp;frasl;16 Kixs Vol.006 eBPF入門 11&amp;frasl;18 第10回ペパボテックカンファレンス Webサーバ拡張における排他制御のパフォーマンスチューニング 10&amp;frasl;08 ペパボ・はてな技</description>
+      <description>Takuma Kume Slides 2018  7/29 July Tech Festa 2018  200万ドメインを超えるレンタルサーバのコンテンツキャッシュの裏側   6/17PHP Conference Fukuoka 2018  DDoSとの終わりなき戦い    2017  12/16 Kixs Vol.006  eBPF入門   11/18 第10回ペパボテックカンファレンス  Webサーバ拡張における排他制御のパフォーマンスチューニング   10/08 ペパボ・はてな技術大会, 9/30 Hosting Casual Talk 4  ホスティングにおける安定運用のためのアクセスコントロール手法   4/26 ホスティング Tech MTG  MHAでデータベースの運用を楽にしよう！    2016  10/29 GMO Hosting conference, 12/2 Kixs Vol.002 ホスティングにおける柔軟なアクセス制御の必要性とその実装  2013  7/18 DNS Summer Days 2013  児童ポルノブロッキングの実装と運用自動化    Other Entry ペパボテックブログ(tech.</description>
     </item>
     
   </channel>

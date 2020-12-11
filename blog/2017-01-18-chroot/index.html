@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2017-01-18-chroot/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,87 +196,77 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<p>今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。
+        <p>今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。
 本日は、Linuxのスレッド内でchrootした場合の影響範囲を調べたのでまとめる。</p>
-
 <h3 id="はじめに">はじめに</h3>
-
 <p>本エントリではLinuxでスレッドを作成して、システムコールの &ldquo;chroot()&rdquo; を実行した場合にスレッド内のみchrootされるのか？それとも、プロセス全体に影響するのかを調査していく。</p>
-
 <h3 id="実際に動かして確認する">実際に動かして確認する</h3>
+<h4 id="スレッドを作成してchrootを実行するプログラムをc言語で作成する">スレッドを作成して、chrootを実行するプログラムをC言語で作成する。</h4>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;pthread.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;errno.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;dirent.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;sys/stat.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;string.h&gt;</span><span class="cp">
+</span><span class="cp"></span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_3</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">set_chroot</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">);</span>
+<span class="kt">void</span><span class="o">*</span> <span class="nf">show_files</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">);</span>
 
-<h4 id="スレッドを作成して-chrootを実行するプログラムをc言語で作成する">スレッドを作成して、chrootを実行するプログラムをC言語で作成する。</h4>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[]){</span>
+  <span class="n">pthread_t</span> <span class="n">thread_id_1</span><span class="p">,</span> <span class="n">thread_id_2</span><span class="p">,</span> <span class="n">thread_id_3</span><span class="p">;</span>
 
-<pre><code class="language-c">#include &lt;stdio.h&gt;
-#include &lt;pthread.h&gt;
-#include &lt;errno.h&gt;
-#include &lt;dirent.h&gt;
-#include &lt;sys/stat.h&gt;
-#include &lt;string.h&gt;
+　<span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
 
-void* thread_1(void* param);
-void* thread_2(void* param);
-void* thread_3(void* param);
-void* set_chroot(char* path);
-void* show_files(char* path);
+  <span class="cp"># スレッドを作って順番に実行していく
+</span><span class="cp"></span>  <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thread_id_1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">thread_1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">pthread_join</span><span class="p">(</span><span class="n">thread_id_1</span><span class="p">,</span><span class="nb">NULL</span><span class="p">);</span>
 
-int main(int argc, char *argv[]){
-  pthread_t thread_id_1, thread_id_2, thread_id_3;
+  <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thread_id_2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">thread_2</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">pthread_join</span><span class="p">(</span><span class="n">thread_id_2</span><span class="p">,</span><span class="nb">NULL</span><span class="p">);</span>
 
-　show_files(&quot;/&quot;);
+  <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thread_id_3</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">thread_3</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">pthread_join</span><span class="p">(</span><span class="n">thread_id_3</span><span class="p">,</span><span class="nb">NULL</span><span class="p">);</span>
 
-  # スレッドを作って順番に実行していく
-  pthread_create(&amp;thread_id_1, NULL, thread_1, NULL);
-  pthread_join(thread_id_1,NULL);
+　<span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
 
-  pthread_create(&amp;thread_id_2, NULL, thread_2, NULL);
-  pthread_join(thread_id_2,NULL);
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_1</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">){</span>
+  <span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+<span class="p">}</span>
 
-  pthread_create(&amp;thread_id_3, NULL, thread_3, NULL);
-  pthread_join(thread_id_3,NULL);
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_2</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">){</span>
+  <span class="n">set_chroot</span><span class="p">(</span><span class="s">&#34;/tmp&#34;</span><span class="p">);</span>
+  <span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+<span class="p">}</span>
 
-　show_files(&quot;/&quot;);
-  return 0;
-}
+<span class="kt">void</span><span class="o">*</span> <span class="nf">thread_3</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">param</span><span class="p">){</span>
+  <span class="n">show_files</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">);</span>
+<span class="p">}</span>
 
-void* thread_1(void* param){
-  show_files(&quot;/&quot;);
-}
+<span class="kt">void</span><span class="o">*</span> <span class="nf">set_chroot</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">){</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;=== chroot ===</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">chroot</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;chroot(%d) %s</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">errno</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+  <span class="p">}</span>
+<span class="p">}</span>
 
-void* thread_2(void* param){
-  set_chroot(&quot;/tmp&quot;);
-  show_files(&quot;/&quot;);
-}
+<span class="kt">void</span><span class="o">*</span> <span class="nf">show_files</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">path</span><span class="p">){</span>
+  <span class="n">DIR</span> <span class="o">*</span><span class="n">dir</span><span class="p">;</span>
+  <span class="k">struct</span> <span class="n">dirent</span> <span class="o">*</span><span class="n">dp</span><span class="p">;</span>
 
-void* thread_3(void* param){
-  show_files(&quot;/&quot;);
-}
-
-void* set_chroot(char* path){
-  printf(&quot;=== chroot ===\n&quot;);
-  if(chroot(path) &lt; 0){
-    printf(&quot;chroot(%d) %s\n&quot;, errno, strerror(errno));
-  }
-}
-
-void* show_files(char* path){
-  DIR *dir;
-  struct dirent *dp;
-
-  dir=opendir(path);
-  for(dp=readdir(dir); dp!=NULL; dp=readdir(dir)){
-    printf(&quot;%s\n&quot;, dp-&gt;d_name);
-  }
-  closedir(dir);
-}
-</code></pre>
-
-<p>上記の様にスレッドを作って、順番に処理させる。
-&ldquo;show_files()&rdquo; は指定したディレクトリの中身を表示するメソッドで、&rdquo;set_chroot()&rdquo; は指定したディレクトリをchrootに設定するメソッドです。
-以下のタイミングで &ldquo;show_files( / )&rdquo; でディレクトリ一覧を取得し、&rdquo;set_chroot( /tmp )&rdquo; を実行したタイミングでディレクトリ一覧が &ldquo;/tmp&rdquo; になるパターンを調べる。</p>
-
+  <span class="n">dir</span><span class="o">=</span><span class="n">opendir</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+  <span class="k">for</span><span class="p">(</span><span class="n">dp</span><span class="o">=</span><span class="n">readdir</span><span class="p">(</span><span class="n">dir</span><span class="p">);</span> <span class="n">dp</span><span class="o">!=</span><span class="nb">NULL</span><span class="p">;</span> <span class="n">dp</span><span class="o">=</span><span class="n">readdir</span><span class="p">(</span><span class="n">dir</span><span class="p">)){</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&#34;%s</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">dp</span><span class="o">-&gt;</span><span class="n">d_name</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">closedir</span><span class="p">(</span><span class="n">dir</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div><p>上記の様にスレッドを作って、順番に処理させる。
+&ldquo;show_files()&rdquo; は指定したディレクトリの中身を表示するメソッドで、&ldquo;set_chroot()&rdquo; は指定したディレクトリをchrootに設定するメソッドです。
+以下のタイミングで &ldquo;show_files( / )&rdquo; でディレクトリ一覧を取得し、&ldquo;set_chroot( /tmp )&rdquo; を実行したタイミングでディレクトリ一覧が &ldquo;/tmp&rdquo; になるパターンを調べる。</p>
 <ul>
 <li>main関数実行直後</li>
 <li>スレッド1実行直後</li>
@@ -280,11 +274,8 @@ void* show_files(char* path){
 <li>スレッド3実行直後</li>
 <li>main関数終了直前</li>
 </ul>
-
 <p>&ldquo;touch /tmp/tmp_here&rdquo; を実行し、tmpディレクトリと分かるようにファイルを配置しておく。</p>
-
 <h5 id="結果">結果</h5>
-
 <pre><code>[root@pmilter thread]# gcc -lpthread kume.c &amp;&amp; ./a.out
 
 ## main関数実行直後
@@ -332,111 +323,91 @@ tmp_here
 .
 ..
 tmp_here
-</code></pre>
-
-<p>結果としては、スレッド内で &ldquo;chroot()&rdquo; が実行されて以降は親プロセスを含めて全てにchrootが適応されていることが分かった。
+</code></pre><p>結果としては、スレッド内で &ldquo;chroot()&rdquo; が実行されて以降は親プロセスを含めて全てにchrootが適応されていることが分かった。
 もちろん、main関数内でchrootした場合も同様だった。</p>
-
-<h4 id="なぜ-スレッド内でchrootした場合に-そのプロセス全体がchroot状態になるのか">なぜ、スレッド内でchrootした場合に、そのプロセス全体がchroot状態になるのか？</h4>
-
+<h4 id="なぜスレッド内でchrootした場合にそのプロセス全体がchroot状態になるのか">なぜ、スレッド内でchrootした場合に、そのプロセス全体がchroot状態になるのか？</h4>
 <ul>
 <li><a href="https://github.com/torvalds/linux/blob/master/fs/open.c#L486-L517">chroot()</a>のソースを見てみる。</li>
 </ul>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="n">SYSCALL_DEFINE1</span><span class="p">(</span><span class="n">chroot</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="n">__user</span> <span class="o">*</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">struct</span> <span class="n">path</span> <span class="n">path</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">error</span><span class="p">;</span>
+	<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">lookup_flags</span> <span class="o">=</span> <span class="n">LOOKUP_FOLLOW</span> <span class="o">|</span> <span class="n">LOOKUP_DIRECTORY</span><span class="p">;</span>
+<span class="nl">retry</span><span class="p">:</span>
+	<span class="n">error</span> <span class="o">=</span> <span class="n">user_path_at</span><span class="p">(</span><span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">lookup_flags</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span>
+		<span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
 
-<pre><code class="language-c">SYSCALL_DEFINE1(chroot, const char __user *, filename)
-{
-	struct path path;
-	int error;
-	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
-retry:
-	error = user_path_at(AT_FDCWD, filename, lookup_flags, &amp;path);
-	if (error)
-		goto out;
+	<span class="n">error</span> <span class="o">=</span> <span class="n">inode_permission</span><span class="p">(</span><span class="n">path</span><span class="p">.</span><span class="n">dentry</span><span class="o">-&gt;</span><span class="n">d_inode</span><span class="p">,</span> <span class="n">MAY_EXEC</span> <span class="o">|</span> <span class="n">MAY_CHDIR</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span>
+		<span class="k">goto</span> <span class="n">dput_and_out</span><span class="p">;</span>
 
-	error = inode_permission(path.dentry-&gt;d_inode, MAY_EXEC | MAY_CHDIR);
-	if (error)
-		goto dput_and_out;
+	<span class="n">error</span> <span class="o">=</span> <span class="o">-</span><span class="n">EPERM</span><span class="p">;</span>
+	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">ns_capable</span><span class="p">(</span><span class="n">current_user_ns</span><span class="p">(),</span> <span class="n">CAP_SYS_CHROOT</span><span class="p">))</span>
+		<span class="k">goto</span> <span class="n">dput_and_out</span><span class="p">;</span>
+	<span class="n">error</span> <span class="o">=</span> <span class="n">security_path_chroot</span><span class="p">(</span><span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span>
+		<span class="k">goto</span> <span class="n">dput_and_out</span><span class="p">;</span>
 
-	error = -EPERM;
-	if (!ns_capable(current_user_ns(), CAP_SYS_CHROOT))
-		goto dput_and_out;
-	error = security_path_chroot(&amp;path);
-	if (error)
-		goto dput_and_out;
-
-	set_fs_root(current-&gt;fs, &amp;path);
-	error = 0;
-dput_and_out:
-	path_put(&amp;path);
-	if (retry_estale(error, lookup_flags)) {
-		lookup_flags |= LOOKUP_REVAL;
-		goto retry;
-	}
-out:
-	return error;
-}
-</code></pre>
-
-<p>&ldquo;set_fs_root(current-&gt;fs, &amp;path)&rdquo; このようにchrootを設定していることが分かる。</p>
-
+	<span class="n">set_fs_root</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">fs</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="n">error</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="nl">dput_and_out</span><span class="p">:</span>
+	<span class="n">path_put</span><span class="p">(</span><span class="o">&amp;</span><span class="n">path</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">retry_estale</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">lookup_flags</span><span class="p">))</span> <span class="p">{</span>
+		<span class="n">lookup_flags</span> <span class="o">|=</span> <span class="n">LOOKUP_REVAL</span><span class="p">;</span>
+		<span class="k">goto</span> <span class="n">retry</span><span class="p">;</span>
+	<span class="p">}</span>
+<span class="nl">out</span><span class="p">:</span>
+	<span class="k">return</span> <span class="n">error</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div><p>&ldquo;set_fs_root(current-&gt;fs, &amp;path)&rdquo; このようにchrootを設定していることが分かる。</p>
 <ul>
 <li><a href="https://github.com/torvalds/linux/blob/5924bbecd0267d87c24110cbe2041b5075173a25/fs/fs_struct.c#L13-L26">set_fs_root()</a>のソースを見てみる。</li>
 </ul>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">set_fs_root</span><span class="p">(</span><span class="k">struct</span> <span class="n">fs_struct</span> <span class="o">*</span><span class="n">fs</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">path</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">struct</span> <span class="n">path</span> <span class="n">old_root</span><span class="p">;</span>
 
-<pre><code class="language-c">void set_fs_root(struct fs_struct *fs, const struct path *path)
-{
-	struct path old_root;
-
-	path_get(path);
-	spin_lock(&amp;fs-&gt;lock);
-	write_seqcount_begin(&amp;fs-&gt;seq);
-	old_root = fs-&gt;root;
-	fs-&gt;root = *path;
-	write_seqcount_end(&amp;fs-&gt;seq);
-	spin_unlock(&amp;fs-&gt;lock);
-	if (old_root.dentry)
-		path_put(&amp;old_root);
-}
-</code></pre>
-
-<p>&ldquo;fs-&gt;root = *path;&rdquo; このようにchrootされたディレクトリを格納していることが分かる。</p>
-
+	<span class="n">path_get</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+	<span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+	<span class="n">write_seqcount_begin</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">seq</span><span class="p">);</span>
+	<span class="n">old_root</span> <span class="o">=</span> <span class="n">fs</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">;</span>
+	<span class="n">fs</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">=</span> <span class="o">*</span><span class="n">path</span><span class="p">;</span>
+	<span class="n">write_seqcount_end</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">seq</span><span class="p">);</span>
+	<span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fs</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">old_root</span><span class="p">.</span><span class="n">dentry</span><span class="p">)</span>
+		<span class="n">path_put</span><span class="p">(</span><span class="o">&amp;</span><span class="n">old_root</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div><p>&ldquo;fs-&gt;root = *path;&rdquo; このようにchrootされたディレクトリを格納していることが分かる。</p>
 <p><a href="https://github.com/torvalds/linux/blob/master/include/linux/sched.h#L1511">sched.h - struct task_struct</a></p>
-
 <p>上記にあった &ldquo;fs_struct&rdquo; 構造体は &ldquo;task_struct&rdquo; 構造体の中にリンクされている。</p>
-
-<pre><code class="language-c">struct task_struct {
-#ifdef CONFIG_THREAD_INFO_IN_TASK
-	/*
-	 * For reasons of header soup (see current_thread_info()), this
-	 * must be the first element of task_struct.
-	 */
-	struct thread_info thread_info;
-#endif
-	volatile long state;	/* -1 unrunnable, 0 runnable, &gt;0 stopped */
-	void *stack;
-  : (snip)
-  /* filesystem information */
-  struct fs_struct *fs;
-  : (snip)
-}
-</code></pre>
-
-<p>&ldquo;task_struct&rdquo; 構造体の中にはスレッドの情報が格納される、 &ldquo;thread_info&rdquo; が存在する。
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">task_struct</span> <span class="p">{</span>
+<span class="cp">#ifdef CONFIG_THREAD_INFO_IN_TASK
+</span><span class="cp"></span>	<span class="cm">/*
+</span><span class="cm">	 * For reasons of header soup (see current_thread_info()), this
+</span><span class="cm">	 * must be the first element of task_struct.
+</span><span class="cm">	 */</span>
+	<span class="k">struct</span> <span class="n">thread_info</span> <span class="n">thread_info</span><span class="p">;</span>
+<span class="cp">#endif
+</span><span class="cp"></span>	<span class="k">volatile</span> <span class="kt">long</span> <span class="n">state</span><span class="p">;</span>	<span class="cm">/* -1 unrunnable, 0 runnable, &gt;0 stopped */</span>
+	<span class="kt">void</span> <span class="o">*</span><span class="n">stack</span><span class="p">;</span>
+  <span class="o">:</span> <span class="p">(</span><span class="n">snip</span><span class="p">)</span>
+  <span class="cm">/* filesystem information */</span>
+  <span class="k">struct</span> <span class="n">fs_struct</span> <span class="o">*</span><span class="n">fs</span><span class="p">;</span>
+  <span class="o">:</span> <span class="p">(</span><span class="n">snip</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div><p>&ldquo;task_struct&rdquo; 構造体の中にはスレッドの情報が格納される、 &ldquo;thread_info&rdquo; が存在する。
 &ldquo;thread_info&rdquo; 構造体の中には、chrootされているpathを記録する &ldquo;fs_struct&rdquo; 構造体などは存在しない。</p>
-
 <h3 id="結論">結論</h3>
-
 <p>以下の事実を元にすると</p>
-
 <ul>
 <li>&ldquo;chroot()&rdquo; 実行後は親プロセスを含む全てのスレッドはchroot状態となる。</li>
 <li>&ldquo;chroot()&rdquo; 実行時は、 &ldquo;fs_stract&rdquo; 構造体の &ldquo;root&rdquo; にchrootのpathが記録される。</li>
-<li>&ldquo;fs_stract&rdquo; 構造体はプロセスの情報が格納される、&rdquo;task_struct&rdquo; 構造体にリンクされている。</li>
+<li>&ldquo;fs_stract&rdquo; 構造体はプロセスの情報が格納される、&ldquo;task_struct&rdquo; 構造体にリンクされている。</li>
 <li>&ldquo;thread_info&rdquo; 構造体の中には、chrootされているpathを記録する &ldquo;fs_struct&rdquo; 構造体は存在しない。</li>
 </ul>
-
-<p>threadで&rdquo;chroot()&ldquo;を実行した場合もプロセスとして持っている &ldquo;fs_stract&rdquo; 構造体にchrootの情報を格納するため、
+<p>threadで&quot;chroot()&ldquo;を実行した場合もプロセスとして持っている &ldquo;fs_stract&rdquo; 構造体にchrootの情報を格納するため、
 &ldquo;chroot()&rdquo; 実行後は親プロセスを含む全てのスレッドはchroot状態となると思われる。</p>
 
       </article>
@@ -530,7 +501,7 @@ out:
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2017-04-05-mod-mruby-cpu-time-control/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,71 +196,53 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h3 id="はじめに">はじめに</h3>
-
+        <h3 id="はじめに">はじめに</h3>
 <p>お久しぶりです。
 ペパボの久米です。
 本日はmrubyを利用したWEBサーバのCPU使用率を元にしたアクセス制御例をご紹介します。</p>
-
 <p>具体的には以下のような制御を行いたい。</p>
-
-<p><img src="/img/2017-04-05/ru_limit.jpg" alt="" width="750" height="563" class="alignnone size-large wp-image-372" /></p>
-
+<p><!-- raw HTML omitted --></p>
 <ul>
 <li>複数ドメイン環境下において、リクエスト毎に使われるCPU使用時間を元にサーバの負荷が高い場合にvhost単位の制限を行う。
-
 <ul>
 <li>サーバの負荷の判断はLoadAveを元に行う。</li>
 <li>CPU使用時間はリクエスト開始から処理終了までの合計が必要なので、判定に使うCPU時間は前回のリクエストの情報を使う。</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h3 id="実装にあたって使用する主なソフトウェア">実装にあたって使用する主なソフトウェア</h3>
-
 <ul>
 <li><a href="https://github.com/matsumotory/mod_mruby">mod_mruby</a> を導入した Apache (本エントリの内容は、おそらく <a href="https://github.com/matsumotory/ngx_mruby">ngx_mruby</a> でも動作する)
-
 <ul>
 <li>詳しくは過去のエントリを御覧ください。 (<a href="/blog/2016-07-26-install-mod-mruby/">httpd + mod_mrubyでプログラマブルなWEBサーバを構築する</a>)</li>
-</ul></li>
+</ul>
+</li>
 <li><a href="https://github.com/harasou/mruby-resource">mruby-resource</a>
-
 <ul>
 <li>今回は <code>getrusage(2)</code> の機能を利用した、CPU使用時間の取得を行うために利用します。</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h3 id="実装">実装</h3>
-
 <p><strong>本エントリでは httpd2.2 + mod_mrubyを用いて行います。</strong></p>
-
 <h4 id="事前準備">事前準備</h4>
-
 <ul>
 <li>mod_mrubyのbuildはbuild_config.rbに以下のような追加をしてビルドしておく。</li>
 </ul>
+<div class="highlight"><pre class="chroma"><code class="language-diff" data-lang="diff"><span class="gd">--- /usr/local/src/mod_mruby/build_config.rb.orig	2017-04-04 10:15:31.152370251 +0000
+</span><span class="gd"></span><span class="gi">+++ /usr/local/src/mod_mruby/build_config.rb	2017-04-04 10:16:15.034296969 +0000
+</span><span class="gi"></span><span class="gu">@@ -43,6 +43,8 @@
+</span><span class="gu"></span>   # conf.gem :github =&gt; &#39;matsumoto-r/mruby-capability&#39;
+   # conf.gem :github =&gt; &#39;matsumoto-r/mruby-cgroup&#39;
 
-<pre><code class="language-diff">--- /usr/local/src/mod_mruby/build_config.rb.orig	2017-04-04 10:15:31.152370251 +0000
-+++ /usr/local/src/mod_mruby/build_config.rb	2017-04-04 10:16:15.034296969 +0000
-@@ -43,6 +43,8 @@
-   # conf.gem :github =&gt; 'matsumoto-r/mruby-capability'
-   # conf.gem :github =&gt; 'matsumoto-r/mruby-cgroup'
-
-+  conf.gem :github =&gt; 'harasou/mruby-resource'
-+
-   # C compiler settings
+<span class="gi">+  conf.gem :github =&gt; &#39;harasou/mruby-resource&#39;
+</span><span class="gi">+
+</span><span class="gi"></span>   # C compiler settings
    conf.cc do |cc|
-     if ENV['BUILD_TYPE'] == &quot;debug&quot;
-</code></pre>
-
-<h4 id="メイン実装">メイン実装</h4>
-
-<h5 id="httpd-conf">httpd.conf</h5>
-
+     if ENV[&#39;BUILD_TYPE&#39;] == &#34;debug&#34;
+</code></pre></div><h4 id="メイン実装">メイン実装</h4>
+<h5 id="httpdconf">httpd.conf</h5>
 <p>以下の内容を追加する。</p>
-
 <pre><code>LoadModule mruby_module modules/mod_mruby.so
 
 &lt;IfModule mod_mruby.c&gt;
@@ -266,155 +252,134 @@ ga('send', 'pageview');
     mrubyLogTransactionMiddle  /etc/httpd/conf.d/mruby/end.rb cache
   &lt;/FilesMatch&gt;
 &lt;/IfModule&gt;
-</code></pre>
-
-<h5 id="init-rb">init.rb</h5>
-
+</code></pre><h5 id="initrb">init.rb</h5>
 <ul>
 <li>プロセス起動時に1度だけ実行される。</li>
 <li>各リクエストで利用するcacheやmutexを作成して、Userdataに格納し各Workerから参照できるようにする。(都度初期化するより大幅にパフォーマンス向上する)</li>
 <li>Userdata.new.shared_cache
-
 <ul>
 <li>vhost毎に最後のリクエスト終了後のCPU使用時間を保持する。</li>
-</ul></li>
+</ul>
+</li>
 <li>Userdata.new.shared_mutex
-
 <ul>
 <li>処理の最後に上記Cacheに書き込む際の競合を防止する。</li>
-</ul></li>
 </ul>
+</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="no">Server</span> <span class="o">=</span> <span class="n">get_server_class</span>
 
-<pre><code class="language-ruby">Server = get_server_class
+<span class="k">begin</span>
+  <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">shared_cache</span> <span class="o">=</span> <span class="no">Cache</span><span class="o">.</span><span class="n">new</span> <span class="ss">:namespace</span> <span class="o">=&gt;</span> <span class="s2">&#34;resource-limiter&#34;</span>
+<span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+  <span class="k">raise</span> <span class="s2">&#34;localmemcache init failed on </span><span class="si">#{</span><span class="bp">__LINE__</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#34;</span>
+<span class="k">end</span>
 
-begin
-  Userdata.new.shared_cache = Cache.new :namespace =&gt; &quot;resource-limiter&quot;
-rescue =&gt; e
-  raise &quot;localmemcache init failed on #{__LINE__}: #{e}&quot;
-end
-
-begin
-  Userdata.new.shared_mutex = Mutex.new :global =&gt; true
-rescue =&gt; e
-  raise &quot;mutex init failed on #{__LINE__}: #{e}&quot;
-end
-</code></pre>
-
-<h5 id="begin-rb">begin.rb</h5>
-
+<span class="k">begin</span>
+  <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">shared_mutex</span> <span class="o">=</span> <span class="no">Mutex</span><span class="o">.</span><span class="n">new</span> <span class="ss">:global</span> <span class="o">=&gt;</span> <span class="kp">true</span>
+<span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+  <span class="k">raise</span> <span class="s2">&#34;mutex init failed on </span><span class="si">#{</span><span class="bp">__LINE__</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#34;</span>
+<span class="k">end</span>
+</code></pre></div><h5 id="beginrb">begin.rb</h5>
 <ul>
 <li>リクエスト毎に最初に実行される。</li>
 <li>LoadAvgが一定以上であれば以下のことをする。
-
 <ul>
 <li>最後のリクエスト終了時点のCPU使用時間が一定を超えていれば503エラーを返す。</li>
 <li>それ以外は通常の処理を行う。</li>
-</ul></li>
 </ul>
+</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="no">LOADAVG_THRESHOLD</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="no">RU_UTIME_LIMIT</span>    <span class="o">=</span> <span class="mi">20</span>
 
-<pre><code class="language-ruby">LOADAVG_THRESHOLD = 50
-RU_UTIME_LIMIT    = 20
+<span class="no">Server</span> <span class="o">=</span> <span class="n">get_server_class</span>
 
-Server = get_server_class
+<span class="c1"># get this server loadavg for 3 min</span>
+<span class="n">loadavg</span> <span class="o">=</span> <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;/proc/loadavg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">to_f</span>
 
-# get this server loadavg for 3 min
-loadavg = IO.read('/proc/loadavg').split(' ')[0].to_f
+<span class="n">vhost</span> <span class="o">=</span> <span class="no">Server</span><span class="o">::</span><span class="no">Request</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">hostname</span>
 
-vhost = Server::Request.new.hostname
-
-if loadavg &gt; LOADAVG_THRESHOLD
-  Server.errlogger Server::LOG_INFO, &quot;loadavg is over threshold. LOADAVG_THRESHOLD:#{LOADAVG_THRESHOLD} loadavg:#{loadavg} hostname:#{vhost}&quot;
-  begin
-    cache = Userdata.new.shared_cache
-    last_ru_utime = cache[vhost].to_f
-    if last_ru_utime &gt; RU_UTIME_LIMIT
-      Server.errlogger Server::LOG_INFO, &quot;ru_utime is over limit (return 503). limit:#{RU_UTIME_LIMIT} last_ru_utime:#{last_ru_utime} hostname:#{vhost}&quot;
-      Server.return Server::HTTP_SERVICE_UNAVAILABLE
-    else
-      Server.return Server::DECLINED
-    end
-  rescue =&gt; e
-    Server.errlogger Server::LOG_ERROR &quot;failed on #{__LINE__}: #{e}&quot;
-    Server.return Server::DECLINED
-  end
-else
-  Server.errlogger Server::LOG_INFO, &quot;loadavg not over threshold. skip... LOADAVG_THRESHOLD:#{LOADAVG_THRESHOLD} loadavg:#{loadavg} hostname:#{vhost}&quot;
-  Server.return Server::DECLINED
-end
-</code></pre>
-
-<h5 id="end-rb">end.rb</h5>
-
+<span class="k">if</span> <span class="n">loadavg</span> <span class="o">&gt;</span> <span class="no">LOADAVG_THRESHOLD</span>
+  <span class="no">Server</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Server</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;loadavg is over threshold. LOADAVG_THRESHOLD:</span><span class="si">#{</span><span class="no">LOADAVG_THRESHOLD</span><span class="si">}</span><span class="s2"> loadavg:</span><span class="si">#{</span><span class="n">loadavg</span><span class="si">}</span><span class="s2"> hostname:</span><span class="si">#{</span><span class="n">vhost</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="k">begin</span>
+    <span class="n">cache</span> <span class="o">=</span> <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">shared_cache</span>
+    <span class="n">last_ru_utime</span> <span class="o">=</span> <span class="n">cache</span><span class="o">[</span><span class="n">vhost</span><span class="o">].</span><span class="n">to_f</span>
+    <span class="k">if</span> <span class="n">last_ru_utime</span> <span class="o">&gt;</span> <span class="no">RU_UTIME_LIMIT</span>
+      <span class="no">Server</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Server</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;ru_utime is over limit (return 503). limit:</span><span class="si">#{</span><span class="no">RU_UTIME_LIMIT</span><span class="si">}</span><span class="s2"> last_ru_utime:</span><span class="si">#{</span><span class="n">last_ru_utime</span><span class="si">}</span><span class="s2"> hostname:</span><span class="si">#{</span><span class="n">vhost</span><span class="si">}</span><span class="s2">&#34;</span>
+      <span class="no">Server</span><span class="o">.</span><span class="n">return</span> <span class="no">Server</span><span class="o">::</span><span class="no">HTTP_SERVICE_UNAVAILABLE</span>
+    <span class="k">else</span>
+      <span class="no">Server</span><span class="o">.</span><span class="n">return</span> <span class="no">Server</span><span class="o">::</span><span class="no">DECLINED</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+    <span class="no">Server</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Server</span><span class="o">::</span><span class="no">LOG_ERROR</span> <span class="s2">&#34;failed on </span><span class="si">#{</span><span class="bp">__LINE__</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#34;</span>
+    <span class="no">Server</span><span class="o">.</span><span class="n">return</span> <span class="no">Server</span><span class="o">::</span><span class="no">DECLINED</span>
+  <span class="k">end</span>
+<span class="k">else</span>
+  <span class="no">Server</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Server</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;loadavg not over threshold. skip... LOADAVG_THRESHOLD:</span><span class="si">#{</span><span class="no">LOADAVG_THRESHOLD</span><span class="si">}</span><span class="s2"> loadavg:</span><span class="si">#{</span><span class="n">loadavg</span><span class="si">}</span><span class="s2"> hostname:</span><span class="si">#{</span><span class="n">vhost</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="no">Server</span><span class="o">.</span><span class="n">return</span> <span class="no">Server</span><span class="o">::</span><span class="no">DECLINED</span>
+<span class="k">end</span>
+</code></pre></div><h5 id="endrb">end.rb</h5>
 <ul>
 <li>コンテンツ処理、レスポンスが終了した時に実行される。</li>
 <li>CPU使用時間をvhostをキーに記録します。</li>
 <li>getrusage(RUSAGE_SELF)
-
 <ul>
 <li>mruby-resourceを用いてgetrusageを実行します。</li>
-<li>ru_utime = rusage[:ru_utime]</li>
+<li>ru_utime = rusage[:ru_utime]
+<ul>
 <li>使用されたユーザCPUの時間を取得します。</li>
-</ul></li>
 </ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="kp">include</span> <span class="no">Resource</span>
 
-<pre><code class="language-ruby">include Resource
+<span class="no">Server</span> <span class="o">=</span> <span class="n">get_server_class</span>
 
-Server = get_server_class
+<span class="n">cache</span> <span class="o">=</span> <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">shared_cache</span>
+<span class="n">mutex</span> <span class="o">=</span> <span class="no">Userdata</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">shared_mutex</span>
+<span class="n">vhost</span> <span class="o">=</span> <span class="no">Server</span><span class="o">::</span><span class="no">Request</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">hostname</span>
 
-cache = Userdata.new.shared_cache
-mutex = Userdata.new.shared_mutex
-vhost = Server::Request.new.hostname
+<span class="n">rusage</span> <span class="o">=</span> <span class="n">getrusage</span><span class="p">(</span><span class="no">RUSAGE_SELF</span><span class="p">)</span>
+<span class="n">ru_utime</span> <span class="o">=</span> <span class="n">rusage</span><span class="o">[</span><span class="ss">:ru_utime</span><span class="o">]</span>
 
-rusage = getrusage(RUSAGE_SELF)
-ru_utime = rusage[:ru_utime]
-
-timeout = mutex.try_lock_loop(50000) do
-  begin
-    cache[vhost] = ru_utime.to_s
-    Server.errlogger Server::LOG_INFO, &quot;Recorded ru_utime. ru_utime:#{ru_utime} hostname:#{vhost}&quot;
-  rescue =&gt; e
-    raise &quot;failed on #{__LINE__}: #{e}&quot;
-  ensure
-    mutex.unlock
-  end
-end
-if timeout
-  Server.errlogger Server::LOG_WARNING, &quot;Get timeout lock mutex&quot;
-end
-</code></pre>
-
-<h3 id="実行結果">実行結果</h3>
-
+<span class="n">timeout</span> <span class="o">=</span> <span class="n">mutex</span><span class="o">.</span><span class="n">try_lock_loop</span><span class="p">(</span><span class="mi">50000</span><span class="p">)</span> <span class="k">do</span>
+  <span class="k">begin</span>
+    <span class="n">cache</span><span class="o">[</span><span class="n">vhost</span><span class="o">]</span> <span class="o">=</span> <span class="n">ru_utime</span><span class="o">.</span><span class="n">to_s</span>
+    <span class="no">Server</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Server</span><span class="o">::</span><span class="no">LOG_INFO</span><span class="p">,</span> <span class="s2">&#34;Recorded ru_utime. ru_utime:</span><span class="si">#{</span><span class="n">ru_utime</span><span class="si">}</span><span class="s2"> hostname:</span><span class="si">#{</span><span class="n">vhost</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+    <span class="k">raise</span> <span class="s2">&#34;failed on </span><span class="si">#{</span><span class="bp">__LINE__</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="k">ensure</span>
+    <span class="n">mutex</span><span class="o">.</span><span class="n">unlock</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="k">if</span> <span class="n">timeout</span>
+  <span class="no">Server</span><span class="o">.</span><span class="n">errlogger</span> <span class="no">Server</span><span class="o">::</span><span class="no">LOG_WARNING</span><span class="p">,</span> <span class="s2">&#34;Get timeout lock mutex&#34;</span>
+<span class="k">end</span>
+</code></pre></div><h3 id="実行結果">実行結果</h3>
 <ul>
 <li>テストのため閾値を大幅に下げます。(begin.rb)</li>
 </ul>
-
-<pre><code class="language-ruby">#LOADAVG_THRESHOLD = 50
-LOADAVG_THRESHOLD = 0.001
-#RU_UTIME_LIMIT    = 20
-RU_UTIME_LIMIT    = 0.001
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="c1">#LOADAVG_THRESHOLD = 50</span>
+<span class="no">LOADAVG_THRESHOLD</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mo">001</span>
+<span class="c1">#RU_UTIME_LIMIT    = 20</span>
+<span class="no">RU_UTIME_LIMIT</span>    <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mo">001</span>
+</code></pre></div><ul>
 <li>負荷が低い時</li>
 </ul>
-
 <pre><code># curl http://hoge.local/index.php =&gt; 通常表示
 [Tue Apr 04 23:54:11 2017] [info] loadavg not over threshold. skip... LOADAVG_THRESHOLD:0.001 loadavg:0 hostname:hoge.local
 [Tue Apr 04 23:54:11 2017] [info] Recorded ru_utime. ru_utime:0.005999 hostname:hoge.local
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>負荷が高い時</li>
 </ul>
-
 <pre><code># curl http://hoge.local/index.php =&gt; 503エラー
 [Tue Apr 04 23:54:34 2017] [info] loadavg is over threshold. LOADAVG_THRESHOLD:0.001 loadavg:0.06 hostname:hoge.local
 [Tue Apr 04 23:54:34 2017] [info] ru_utime is over limit (return 503). limit:0.001 last_ru_utime:0.010998 hostname:hoge.local
 [Tue Apr 04 23:54:34 2017] [info] Recorded ru_utime. ru_utime:0.007998 hostname:hoge.local
-</code></pre>
-
-<p>このように指定したCPU使用時間を超えた場合にエラーを返すことができました。</p>
+</code></pre><p>このように指定したCPU使用時間を超えた場合にエラーを返すことができました。</p>
 
       </article>
 
@@ -507,7 +472,7 @@ RU_UTIME_LIMIT    = 0.001
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

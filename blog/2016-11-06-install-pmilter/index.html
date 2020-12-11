@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-11-06-install-pmilter/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,135 +196,88 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h2 id="pmilterとは">pmilterとは</h2>
-
+        <h2 id="pmilterとは">pmilterとは</h2>
 <ul>
 <li><a href="https://github.com/matsumotory/pmilter">pmilter</a></li>
 <li><a href="https://twitter.com/matsumotory">@matsumotory</a>が開発している<a href="https://github.com/mruby/mruby">mruby</a>でコントロール可能な<a href="https://en.wikipedia.org/wiki/Milter">milter</a>である。</li>
 <li>ngx_mrubyやmod_mrubyなどを使ったことがある人であれば、そのようなイメージでメールの制御を行うことができる。</li>
 </ul>
-
 <h5 id="何ができるのか">何ができるのか？</h5>
-
 <ul>
 <li>MTAに組み込むことで、メールの様々な情報を元にmrubyで制御できる。
-
 <ul>
 <li>SMTPプロトコルの各フェーズでmrubyをフックすることができ、メールのenvelopeやヘッダ、TLSの情報や認証情報などを利用してメールの制御を行うことができる。</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h2 id="環境を構築する">環境を構築する</h2>
-
 <h5 id="環境">環境</h5>
-
 <ul>
 <li>CentOS 7.2</li>
 <li>postfix 8.14.7</li>
 <li>ruby 2.0</li>
 </ul>
-
 <h5 id="selinuxの無効化">SELinuxの無効化</h5>
-
 <ul>
 <li>SELinuxを無効にしないと、pmilterのsocketとpostfixが通信できなくなる。</li>
 </ul>
-
-<pre><code class="language-sh">sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
-setenforce 0
-</code></pre>
-
-<h5 id="必要なパッケージのインストール">必要なパッケージのインストール</h5>
-
-<pre><code class="language-sh">yum install -y git \
-               mailx \
-               ruby \
-               gcc \
-               gcc-c++ \
-               make \
-               cmake \
-               autoconf \
-               automake \
-               libtool \
-               bison
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">sed -i <span class="s1">&#39;s/SELINUX=enforcing/SELINUX=disabled/g&#39;</span> /etc/selinux/config
+setenforce <span class="m">0</span>
+</code></pre></div><h5 id="必要なパッケージのインストール">必要なパッケージのインストール</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">yum install -y git <span class="se">\
+</span><span class="se"></span>               mailx <span class="se">\
+</span><span class="se"></span>               ruby <span class="se">\
+</span><span class="se"></span>               gcc <span class="se">\
+</span><span class="se"></span>               gcc-c++ <span class="se">\
+</span><span class="se"></span>               make <span class="se">\
+</span><span class="se"></span>               cmake <span class="se">\
+</span><span class="se"></span>               autoconf <span class="se">\
+</span><span class="se"></span>               automake <span class="se">\
+</span><span class="se"></span>               libtool <span class="se">\
+</span><span class="se"></span>               bison
 rpm -ivh ftp://ftp.pbone.net/mirror/ftp.sourceforge.net/pub/sourceforge/k/ke/kenzy/special/C7/x86_64/ragel-6.8-3.el7.centos.x86_64.rpm
-</code></pre>
-
-<h5 id="pmilterのビルド">pmilterのビルド</h5>
-
-<pre><code class="language-sh">cd /usr/local/src/ &amp;&amp; git clone https://github.com/matsumoto-r/pmilter.git
-</code></pre>
-
-<pre><code class="language-sh">cd /usr/local/src/pmilter
+</code></pre></div><h5 id="pmilterのビルド">pmilterのビルド</h5>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">cd</span> /usr/local/src/ <span class="o">&amp;&amp;</span> git clone https://github.com/matsumoto-r/pmilter.git
+</code></pre></div><div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">cd</span> /usr/local/src/pmilter
 make mruby
 make
-</code></pre>
-
-<pre><code class="language-sh">[root@pmilter pmilter]# file pmilter
-pmilter: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=5bed3d8ff85db4e11865d073542d063671c61794, not stripped
-</code></pre>
-
-<h5 id="pmilterの設定">pmilterの設定</h5>
-
+</code></pre></div><div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="o">[</span>root@pmilter pmilter<span class="o">]</span><span class="c1"># file pmilter</span>
+pmilter: ELF 64-bit LSB executable, x86-64, version <span class="m">1</span> <span class="o">(</span>SYSV<span class="o">)</span>, dynamically linked <span class="o">(</span>uses shared libs<span class="o">)</span>, <span class="k">for</span> GNU/Linux 2.6.32, BuildID<span class="o">[</span>sha1<span class="o">]=</span>5bed3d8ff85db4e11865d073542d063671c61794, not stripped
+</code></pre></div><h5 id="pmilterの設定">pmilterの設定</h5>
 <p>今回はSMTPサーバにpmilterを同居させて、socketを使ってpostfixと通信する。</p>
-
 <ul>
 <li>pmilter.conf の listen を以下のようにする。</li>
 </ul>
-
-<pre><code class="language-sh">listen = &quot;/var/spool/postfix/pmilter/pmilter.sock&quot;
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nv">listen</span> <span class="o">=</span> <span class="s2">&#34;/var/spool/postfix/pmilter/pmilter.sock&#34;</span>
+</code></pre></div><ul>
 <li>ディレクトリを作成</li>
 </ul>
-
-<pre><code class="language-sh">mkdir -p /var/spool/postfix/pmilter
-</code></pre>
-
-<h5 id="pmilterを起動する">pmilterを起動する</h5>
-
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">mkdir -p /var/spool/postfix/pmilter
+</code></pre></div><h5 id="pmilterを起動する">pmilterを起動する</h5>
 <ul>
 <li>以下のようにするとフォアグラウンドでpmilterが起動する。</li>
 <li>実際にはpostfixの起動スクリプトなどにバックグラウンドで起動するようにする感じ。</li>
 </ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">sudo -u postfix ./pmilter -c pmilter.conf
+<span class="o">[</span>Thu, <span class="m">03</span> Nov <span class="m">2016</span> 15:38:11 GMT<span class="o">][</span>notice<span class="o">]</span>: pmilter/0.0.1 starting
 
-<pre><code class="language-sh">sudo -u postfix ./pmilter -c pmilter.conf
-[Thu, 03 Nov 2016 15:38:11 GMT][notice]: pmilter/0.0.1 starting
-
-</code></pre>
-
-<h5 id="postfix-で-pmilter-の-socket-を利用する">postfix で pmilter の socket を利用する。</h5>
-
+</code></pre></div><h5 id="postfix-で-pmilter-の-socket-を利用する">postfix で pmilter の socket を利用する。</h5>
 <ul>
 <li>/etc/postfix/main.cf に以下を記述する。</li>
 </ul>
-
-<pre><code class="language-sh">smtpd_milters = unix:/var/spool/postfix/pmilter/pmilter.sock
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nv">smtpd_milters</span> <span class="o">=</span> unix:/var/spool/postfix/pmilter/pmilter.sock
+</code></pre></div><ul>
 <li>postfix を再起動する。</li>
 </ul>
-
-<pre><code class="language-sh">systemctl restart postfix
-</code></pre>
-
-<h5 id="動作確認">動作確認</h5>
-
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">systemctl restart postfix
+</code></pre></div><h5 id="動作確認">動作確認</h5>
 <ul>
 <li>メールを送信</li>
 </ul>
-
-<pre><code class="language-sh">echo &quot;test&quot; | mail -s &quot;test&quot; YOUR_MAILADDRESS@gmail.com
-</code></pre>
-
-<ul>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="nb">echo</span> <span class="s2">&#34;test&#34;</span> <span class="p">|</span> mail -s <span class="s2">&#34;test&#34;</span> YOUR_MAILADDRESS@gmail.com
+</code></pre></div><ul>
 <li>デフォルトであれば、SMTPプロトコルの各フェーズで取得できる情報が表示される。</li>
 </ul>
-
 <pre><code># sudo -u postfix ./pmilter -c pmilter.conf
 [Thu, 03 Nov 2016 15:38:11 GMT][notice]: pmilter/0.0.1 starting
 ello pmilter handler called from pmilter
@@ -389,9 +346,7 @@ myhostname: pmilter.local
 message_id: 34B2780AD79D
 reveive_time: Fri Nov 04 09:42:59 2016
 add_header(X-Pmilter:True): Enable
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>次回はこれらの情報からメールを制御してみる。</li>
 </ul>
 
@@ -486,7 +441,7 @@ add_header(X-Pmilter:True): Enable
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

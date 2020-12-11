@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-12-31-refrection-2016/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,65 +196,44 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<p>他社の優秀なエンジニアの方々やペパボにいる尊敬しているエンジニアが次々に振り返りエントリを書いていて、どれも感慨深いなぁ〜と思って見ていた。
+        <p>他社の優秀なエンジニアの方々やペパボにいる尊敬しているエンジニアが次々に振り返りエントリを書いていて、どれも感慨深いなぁ〜と思って見ていた。
 そうするうちに、私も振り返らねばでは？と思い焦って書き始める。（振り返っていたら今年？去年は既に去っていた。）</p>
-
 <p>この動きは2016年4月にペパボに入って以降に変わってきたところでもある。
 それまでの僕なら「なるほど〜こんな凄いエンジニアもいるのか。リツイートして蕎麦食って寝よう。」だった。
 （一応、意識高い風なので読みはしたよ！！という感じで）
 理想は、「2016年も終わるし振り返ろう！」と自発的に書くのであろうが、私はそこまで行っておらず「やらねば」となり少しづつ手を動かすようになった感じだ。
 来年は、この機会を増やし何事にも自発的に動いていくことが目標の１つだ。</p>
-
 <p>ということで、2016年を振り返って行く。</p>
-
 <h3 id="ペパボに入社">ペパボに入社</h3>
-
 <p>転職以前はOSSはおろか、コードを書く機会も少なくやりたいことの技術的成長速度が伸び悩んでいた。
 それでも中々行動できずもじもじとしていたところ、ペパボという光が見えたところから僕のエンジニア人生は変わった。
 以下のエントリに詳しく書いた。</p>
-
 <p><a href="/blog/2016-05-14-join-pepabo-a-month-ago/">ペパボに入社して1ヶ月が過ぎた</a></p>
-
 <h3 id="技術的な成長">技術的な成長</h3>
-
 <p>入社当初はインフラエンジニアとして何からやればいいか分からなかった。
 インフラの運用を通じて基礎を学ぶ中で、様々な問題を解決する手段としてmrubyに出会った。
 入社当初、私は何の役にも立たなかったのでチームの中で何か役に立てる分野を探して伸ばしていきたいと思いmruby関連の技術を学ぶことにした。</p>
-
 <p>その結果、社の優秀なエンジニアの方々に色々とご指導を頂いたことで、mrubyを始めとした技術を学ぶことができた。
 これまでやったことないことばかりで、本当に初歩的なところで次々とハマって思ったようにはいかなかったので、それは来年の糧にしたいと思う。</p>
-
 <h3 id="アウトプット">アウトプット</h3>
-
 <p>ペパボに入るまではアウトプットをしようという頭はまったくなかったので、Qiitaのいい記事を眺めて終わりという感じだった。
 今年はアウトプットする側になるぞ！ということでこのブログを作ってmrubyに関する技術的な投稿を行った。
 社外発表も2回することができた。</p>
-
 <ul>
 <li><a href="https://gmohoscon.connpass.com/event/41490/">HosCon - GMO Hosting Conference - @渋谷</a></li>
 <li><a href="https://kixs.connpass.com/event/43925/">九州インフラ交流勉強会(Kixs) Vol.002</a></li>
 </ul>
-
 <p>今年はブログになんか書くくらいかな〜と思っていたところ、発表の機会を得ることができたのが本当に運が良かった。
 社外発表の準備〜本番までを実施して得たものは計り知れないので、来年もこのような機会を創出して成長につなげたいなと思った。</p>
-
 <h3 id="来年改善しなければならないこと">来年改善しなければならないこと</h3>
-
 <h5 id="基礎を学ぶこと">基礎を学ぶこと</h5>
-
 <p>mruby関連の実装を行った時に、rubyの知識がほぼないままプロダクトの完成を優先させてしまった。
 その結果多くの手戻りが発生したりバグを産んだり、冗長なコードを書いたりした。
 今年は、ニュアンスで物事を進めるだけではなく、きちんと基礎となる知識をインプットする時間を作らねばと思う。</p>
-
 <h5 id="初めから無理と思うのをやめる">初めから無理と思うのをやめる</h5>
-
 <p>今まで自分がやることになるとも想像しなかった物事に対して、「あーこれは専門外だな」ってな感じでスルーしたり、なんとなく技術的に無理そうだなってな感じで妥協したりすることが多々あった。
 今年はそういった考え方をしないように意識していこうと思う。</p>
-
 <h3 id="おわりに">おわりに</h3>
-
 <p>今年は手を動かしたら動かした分成長している感覚はあったけど、手を動かした分しか成長しないんだなと、再認識したので来年は後悔のないように生きたいと思う。</p>
 
       </article>
@@ -344,7 +327,7 @@ ga('send', 'pageview');
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

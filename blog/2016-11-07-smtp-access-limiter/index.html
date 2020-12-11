@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-11-07-smtp-access-limiter/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,68 +196,46 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h3 id="はじめに">はじめに</h3>
-
+        <h3 id="はじめに">はじめに</h3>
 <p>先日は 「<a href="/blog/2016-11-06-install-pmilter/">pmilter + postfixでプログラマブルなSMTPサーバを作る（入門編）</a>」の記事で<a href="https://github.com/matsumotory/pmilter">pmilter</a>の環境構築を行いました。
 本エントリでは、<a href="https://github.com/matsumotory/pmilter">pmilter</a>を活用して実際にメールの通数を制御するソフトウェアを作成しました。</p>
-
 <p><a href="https://github.com/takumakume/smtp-access-limiter">smtp-access-limiter</a> (まだプロトタイプ)</p>
-
 <h3 id="smtp-access-limiterとは">smtp-access-limiterとは</h3>
-
 <p>任意のToやFrom、文字列などをキーとして、一定期間のメールの通数をカウントするソフトウェアです。
 キーとして利用するのは、pmilterの各SMTPプロトコルフローの中で取得できるパラメータです。</p>
-
 <p>また、pmilterの性質上メールがキューに入る前に処理されるので、処理できないメールを効率よく制御することができます。</p>
-
 <h3 id="ソフトウェアの紹介にあたって">ソフトウェアの紹介にあたって</h3>
-
 <p>今回は、pmilterで取得できるパラメータの中でも RCPT TOのフェーズで取得できるenvelop toからドメイン名を取得して、それをキーとします。
-&ldquo;RCPT TO: hoge@foo.com&rdquo; であれば &ldquo;foo.com&rdquo; をキーとする。</p>
-
+&ldquo;RCPT TO: <a href="mailto:hoge@foo.com">hoge@foo.com</a>&rdquo; であれば &ldquo;foo.com&rdquo; をキーとする。</p>
 <p>その上で、一定期間内に同一の送信先のドメインに送れるメール通数の制御を行ってみます。</p>
-
-<h3 id="let-s-development">Let&rsquo;s development!!</h3>
-
+<h3 id="lets-development">Let&rsquo;s development!!</h3>
 <h5 id="pmilterのビルド">pmilterのビルド</h5>
-
 <p>pmilterの &ldquo;src/mruby/build_config.rb&rdquo; でpmilterで実行するmruby scriptで使うmgemの設定を行うところがあります。今回は以下のmgemを利用しますので設定してpmilterを再ビルドします。</p>
-
 <ul>
 <li>matsumotory/mruby-mutex</li>
 <li>matsumotory/mruby-localmemcache</li>
 </ul>
-
-<pre><code class="language-diff"># git diff src/mruby/build_config.rb
-diff --git a/src/mruby/build_config.rb b/src/mruby/build_config.rb
-index bc9e69e..c157a37 100644
---- a/src/mruby/build_config.rb
-+++ b/src/mruby/build_config.rb
-@@ -18,6 +18,8 @@ MRuby::Build.new do |conf|
-   # conf.gem 'examples/mrbgems/c_and_ruby_extension_example'
-   # conf.gem :github =&gt; 'masuidrive/mrbgems-example', :checksum_hash =&gt; '76518e8aecd131d047378448ac8055fa29d974a9'
-   # conf.gem :git =&gt; 'git@github.com:masuidrive/mrbgems-example.git', :branch =&gt; 'master', :options =&gt; '-v'
-+  conf.gem :github =&gt; 'matsumotory/mruby-mutex'
-+  conf.gem :github =&gt; 'matsumotory/mruby-localmemcache'
-
+<div class="highlight"><pre class="chroma"><code class="language-diff" data-lang="diff"># git diff src/mruby/build_config.rb
+<span class="gh">diff --git a/src/mruby/build_config.rb b/src/mruby/build_config.rb
+</span><span class="gh">index bc9e69e..c157a37 100644
+</span><span class="gh"></span><span class="gd">--- a/src/mruby/build_config.rb
+</span><span class="gd"></span><span class="gi">+++ b/src/mruby/build_config.rb
+</span><span class="gi"></span><span class="gu">@@ -18,6 +18,8 @@ MRuby::Build.new do |conf|
+</span><span class="gu"></span>   # conf.gem &#39;examples/mrbgems/c_and_ruby_extension_example&#39;
+   # conf.gem :github =&gt; &#39;masuidrive/mrbgems-example&#39;, :checksum_hash =&gt; &#39;76518e8aecd131d047378448ac8055fa29d974a9&#39;
+   # conf.gem :git =&gt; &#39;git@github.com:masuidrive/mrbgems-example.git&#39;, :branch =&gt; &#39;master&#39;, :options =&gt; &#39;-v&#39;
+<span class="gi">+  conf.gem :github =&gt; &#39;matsumotory/mruby-mutex&#39;
+</span><span class="gi">+  conf.gem :github =&gt; &#39;matsumotory/mruby-localmemcache&#39;
+</span><span class="gi"></span>
    # include the default GEMs
-   conf.gembox 'default'
-</code></pre>
-
-<p>再ビルド</p>
-
-<pre><code class="language-sh">make mruby
+   conf.gembox &#39;default&#39;
+</code></pre></div><p>再ビルド</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">make mruby
 make
-</code></pre>
-
-<h5 id="pmilterの設定">pmilterの設定</h5>
-
+</code></pre></div><h5 id="pmilterの設定">pmilterの設定</h5>
 <ul>
 <li>pmilter.conf</li>
 </ul>
-
 <pre><code>[server]
 # hoge.sock or ipaddree:port
 listen = &quot;/var/tmp/pmilter.sock&quot;
@@ -266,131 +248,110 @@ debug = 1
 [handler]
 # envelope recipient filter handler
 mruby_envrcpt_handler = &quot;handler/access_limiter.rb&quot;
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>handler/access_limiter.rb</li>
 </ul>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="n">global_mutex</span> <span class="o">=</span> <span class="no">Mutex</span><span class="o">.</span><span class="n">new</span> <span class="ss">:global</span> <span class="o">=&gt;</span> <span class="kp">true</span>
 
-<pre><code class="language-ruby">global_mutex = Mutex.new :global =&gt; true
+<span class="k">class</span> <span class="nc">AccessLimiter</span>
+  <span class="k">def</span> <span class="nf">initialize</span> <span class="n">config</span>
+    <span class="vi">@current_time</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">localtime</span><span class="o">.</span><span class="n">to_i</span>
+    <span class="vi">@counter_kvs</span> <span class="o">=</span> <span class="no">Cache</span><span class="o">.</span><span class="n">new</span> <span class="ss">:namespace</span> <span class="o">=&gt;</span> <span class="s2">&#34;smtp_access_limiter&#34;</span>
+    <span class="vi">@counter_key</span> <span class="o">=</span> <span class="n">config</span><span class="o">[</span><span class="ss">:target</span><span class="o">]</span>
+    <span class="k">raise</span> <span class="s2">&#34;config[:target] is nil&#34;</span> <span class="k">unless</span> <span class="vi">@counter_key</span>
+    <span class="vi">@interval_time</span> <span class="o">=</span> <span class="n">config</span><span class="o">[</span><span class="ss">:interval_time</span><span class="o">].</span><span class="n">to_i</span>
+    <span class="k">raise</span> <span class="s2">&#34;config[:interval_time] is nil&#34;</span> <span class="k">unless</span> <span class="n">config</span><span class="o">[</span><span class="ss">:interval_time</span><span class="o">]</span>
+  <span class="k">end</span>
 
-class AccessLimiter
-  def initialize config
-    @current_time = Time.new.localtime.to_i
-    @counter_kvs = Cache.new :namespace =&gt; &quot;smtp_access_limiter&quot;
-    @counter_key = config[:target]
-    raise &quot;config[:target] is nil&quot; unless @counter_key
-    @interval_time = config[:interval_time].to_i
-    raise &quot;config[:interval_time] is nil&quot; unless config[:interval_time]
-  end
+  <span class="k">def</span> <span class="nf">cleanup</span>
+    <span class="n">ctime</span> <span class="o">=</span> <span class="vi">@counter_kvs</span><span class="o">[</span><span class="s2">&#34;create_time_</span><span class="si">#{</span><span class="vi">@counter_key</span><span class="si">}</span><span class="s2">&#34;</span><span class="o">].</span><span class="n">to_i</span>
+    <span class="k">return</span> <span class="kp">false</span> <span class="k">if</span> <span class="n">ctime</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ctime</span> <span class="o">+</span> <span class="vi">@interval_time</span><span class="p">)</span> <span class="o">&lt;</span> <span class="vi">@current_time</span>
+      <span class="vi">@counter_kvs</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="s2">&#34;create_time_</span><span class="si">#{</span><span class="vi">@counter_key</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+      <span class="vi">@counter_kvs</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="vi">@counter_key</span><span class="p">)</span>
+      <span class="kp">true</span>
+    <span class="k">else</span>
+      <span class="kp">false</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def cleanup
-    ctime = @counter_kvs[&quot;create_time_#{@counter_key}&quot;].to_i
-    return false if ctime == 0
-    if (ctime + @interval_time) &lt; @current_time
-      @counter_kvs.delete(&quot;create_time_#{@counter_key}&quot;)
-      @counter_kvs.delete(@counter_key)
-      true
-    else
-      false
-    end
-  end
+  <span class="k">def</span> <span class="nf">current</span>
+    <span class="vi">@counter_kvs</span><span class="o">[</span><span class="vi">@counter_key</span><span class="o">]</span>
+  <span class="k">end</span>
 
-  def current
-    @counter_kvs[@counter_key]
-  end
+  <span class="k">def</span> <span class="nf">increment</span>
+    <span class="n">cur</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">to_i</span>
+    <span class="k">if</span> <span class="n">cur</span> <span class="o">==</span> <span class="mi">0</span>
+      <span class="vi">@counter_kvs</span><span class="o">[</span><span class="s2">&#34;create_time_</span><span class="si">#{</span><span class="vi">@counter_key</span><span class="si">}</span><span class="s2">&#34;</span><span class="o">]</span> <span class="o">=</span> <span class="vi">@current_time</span><span class="o">.</span><span class="n">to_s</span>
+    <span class="k">end</span>
+    <span class="vi">@counter_kvs</span><span class="o">[</span><span class="vi">@counter_key</span><span class="o">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cur</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_s</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-  def increment
-    cur = current.to_i
-    if cur == 0
-      @counter_kvs[&quot;create_time_#{@counter_key}&quot;] = @current_time.to_s
-    end
-    @counter_kvs[@counter_key] = (cur + 1).to_s
-  end
-end
+<span class="c1">#-------------------------</span>
+<span class="c1"># ここから下のコードを書き換えて制御単位を変える。</span>
+<span class="c1"># この例ではenvelope toのドメイン単位で送信制御を行っている。</span>
+<span class="c1">#-------------------------</span>
 
-#-------------------------
-# ここから下のコードを書き換えて制御単位を変える。
-# この例ではenvelope toのドメイン単位で送信制御を行っている。
-#-------------------------
+<span class="c1"># 一定期間内に許可する通数</span>
+<span class="n">threshold</span> <span class="o">=</span> <span class="mi">10</span>
 
-# 一定期間内に許可する通数
-threshold = 10
+<span class="c1"># envelope_toからドメイン部分を抽出</span>
+<span class="n">target</span> <span class="o">=</span> <span class="no">Pmilter</span><span class="o">::</span><span class="no">Session</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">envelope_to</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;@&#34;</span><span class="p">)</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
 
-# envelope_toからドメイン部分を抽出
-target = Pmilter::Session.new.envelope_to.split(&quot;@&quot;)[1]
+<span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="ss">:target</span> <span class="o">=&gt;</span> <span class="n">target</span><span class="p">,</span>
+  <span class="c1"># 期間指定(秒)</span>
+  <span class="ss">:interval_time</span> <span class="o">=&gt;</span> <span class="mi">60</span>
+<span class="p">}</span>
+<span class="n">limiter</span> <span class="o">=</span> <span class="no">AccessLimiter</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="n">status</span> <span class="o">=</span> <span class="n">limiter</span><span class="o">.</span><span class="n">cleanup</span>
+<span class="nb">p</span> <span class="s2">&#34;access_limiter: cleanup counter </span><span class="si">#{</span><span class="n">target</span><span class="si">}</span><span class="s2"> interval_time: </span><span class="si">#{</span><span class="n">interval_time</span><span class="si">}</span><span class="s2">&#34;</span> <span class="k">if</span> <span class="n">status</span>
 
-config = {
-  :target =&gt; target,
-  # 期間指定(秒)
-  :interval_time =&gt; 60
-}
-limiter = AccessLimiter.new(config)
-status = limiter.cleanup
-p &quot;access_limiter: cleanup counter #{target} interval_time: #{interval_time}&quot; if status
-
-timeout = global_mutex.try_lock_loop(50000) do
-  begin
-    limiter.increment
-    p &quot;access_limiter: increment #{target} current: #{limiter.current} threshold: #{threshold}&quot;
-    if limiter.current.to_i &gt; threshold
-      p &quot;access_limiter: reject #{target} threshold: #{threshold}&quot;
-      Pmilter.status = Pmilter::SMFIS_REJECT
-    end
-  rescue =&gt; e
-    p &quot;access_limiter: increment error #{target} #{e}&quot;
-  ensure
-    global_mutex.unlock
-  end
-  if timeout
-    &quot;access_limiter: get timeout lock, #{target}&quot;
-  end
-end
-</code></pre>
-
-<ul>
+<span class="n">timeout</span> <span class="o">=</span> <span class="n">global_mutex</span><span class="o">.</span><span class="n">try_lock_loop</span><span class="p">(</span><span class="mi">50000</span><span class="p">)</span> <span class="k">do</span>
+  <span class="k">begin</span>
+    <span class="n">limiter</span><span class="o">.</span><span class="n">increment</span>
+    <span class="nb">p</span> <span class="s2">&#34;access_limiter: increment </span><span class="si">#{</span><span class="n">target</span><span class="si">}</span><span class="s2"> current: </span><span class="si">#{</span><span class="n">limiter</span><span class="o">.</span><span class="n">current</span><span class="si">}</span><span class="s2"> threshold: </span><span class="si">#{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">&#34;</span>
+    <span class="k">if</span> <span class="n">limiter</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">to_i</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+      <span class="nb">p</span> <span class="s2">&#34;access_limiter: reject </span><span class="si">#{</span><span class="n">target</span><span class="si">}</span><span class="s2"> threshold: </span><span class="si">#{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">&#34;</span>
+      <span class="no">Pmilter</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="no">Pmilter</span><span class="o">::</span><span class="no">SMFIS_REJECT</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+    <span class="nb">p</span> <span class="s2">&#34;access_limiter: increment error </span><span class="si">#{</span><span class="n">target</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="k">ensure</span>
+    <span class="n">global_mutex</span><span class="o">.</span><span class="n">unlock</span>
+  <span class="k">end</span>
+  <span class="k">if</span> <span class="n">timeout</span>
+    <span class="s2">&#34;access_limiter: get timeout lock, </span><span class="si">#{</span><span class="n">target</span><span class="si">}</span><span class="s2">&#34;</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div><ul>
 <li>メールが送信されて、rcpt toが実行されたときにこのソースコードが実行される。</li>
 <li>envelope to の ドメイン名が抽出され、それをキーとしてKVS上のカウンターをインクリメントする。</li>
 <li>インクリメント時に0-&gt;1になったときだけ、cureate_time_DOMAINのキーを作成し、時刻を記録する。</li>
 <li>インクリメント処理の前に、cureate_time_DOMAINが指定したinterval_timeを経過していた場合はカウンターを削除する。</li>
 </ul>
-
 <h5 id="動作">動作</h5>
-
-<p>hoge@pmilter.localへメールを送っていきます。</p>
-
+<p><a href="mailto:hoge@pmilter.local">hoge@pmilter.local</a>へメールを送っていきます。</p>
 <ul>
 <li>1通目</li>
 </ul>
-
 <pre><code>&quot;access_limiter: increment pmilter.local current: 1 threshold: 10&quot;
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>2通目</li>
 </ul>
-
 <pre><code>&quot;access_limiter: increment pmilter.local current: 2 threshold: 10&quot;
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>11通目 (ここからRejectされている)</li>
 </ul>
-
 <pre><code>&quot;access_limiter: increment pmilter.local current: 11 threshold: 10&quot;
 &quot;access_limiter: reject pmilter.local threshold: 10&quot;
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>1分経過後の1通目 (通数カウントがリセットされている)</li>
 </ul>
-
 <pre><code>&quot;access_limiter: cleanup counter pmilter.local&quot;
 &quot;access_limiter: increment pmilter.local current: 1 threshold: 10&quot;
-</code></pre>
-
-<h3 id="今後について">今後について</h3>
-
+</code></pre><h3 id="今後について">今後について</h3>
 <ul>
 <li>smtp-access-limiterはまだプロトタイプなので、これからテストの作成やパフォーマンス試験などを行う。</li>
 <li>現段階で動作ログが標準出力のみなので、ログ出力できるようにする。</li>
@@ -489,7 +450,7 @@ end
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

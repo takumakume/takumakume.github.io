@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2016-05-10-ngx-mruby-reverse-proxy/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,54 +196,38 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<h3 id="はじめに">はじめに</h3>
-
+        <h3 id="はじめに">はじめに</h3>
 <p>どうも、GMOペパボ 試用期間の久米です。
 ngx_mruby + mruby-memcached + mruby-mysql 環境構築のエントリを投稿しましたが、それを使ったリバースプロキシの構築についてまとめました。</p>
-
 <p>本エントリでは以下の手順で構築したngx_mruby環境上でリバースプロキシを構築するものですので、試したい方は以下も併せてご参照ください。
 <a href="/blog/2016-04-11-try-install-ngx-mruby/">CentOS6で ngx_mruby + mruby-memcached + mruby-mysql をインストールした。</a></p>
-
-<h3 id="ngx-mrubyで転送先を外部参照するリバースwebプロキシを構築するとは">ngx_mrubyで転送先を外部参照するリバースWEBプロキシを構築するとは</h3>
-
-<h6 id="本エントリで記載する-転送先を外部参照するリバースwebプロキシ-には以下の特徴がある">本エントリで記載する&rdquo;転送先を外部参照するリバースWEBプロキシ&rdquo;には以下の特徴がある。</h6>
-
+<h3 id="ngx_mrubyで転送先を外部参照するリバースwebプロキシを構築するとは">ngx_mrubyで転送先を外部参照するリバースWEBプロキシを構築するとは</h3>
+<h6 id="本エントリで記載する転送先を外部参照するリバースwebプロキシには以下の特徴がある">本エントリで記載する&quot;転送先を外部参照するリバースWEBプロキシ&quot;には以下の特徴がある。</h6>
 <ul>
 <li>HTTPリクエストのホストに応じてプロキシの転送先を変更する。</li>
 <li>転送先ホストの情報ソースとしてKVS(memcached)とDatabase(mysqld)を利用する。
-
 <ol>
 <li>HTTPリクエストホストをKeyに転送先ホスト名をKVSに問合せる。(存在していれば修了)</li>
 <li>KVSに存在していなければ　Databaseに問合せを行う。</li>
 <li>KVSに情報を書き込む。(次回以降はキャッシュが切れるまでKVSが応答)</li>
-</ol></li>
+</ol>
+</li>
 </ul>
-
 <h6 id="具体的な構成と動作については以下のようになる">具体的な構成と動作については以下のようになる。</h6>
-
-<p><img src="/img/2016-05-10/ngx_mruby.jpg" alt="ngx_mruby-rprx.001" width="1024" height="768" class="alignnone size-medium wp-image-205" /></p>
-
+<p><!-- raw HTML omitted --></p>
 <h3 id="use-case">Use case</h3>
-
 <ul>
 <li>HTTPリクエストホストに応じてKVSやDatabaseの情報ソースを元にコントーロールを行いたい。
-
 <ul>
 <li>例えば大量のWEBサーバに対して、ホストされているサイトをDatabaseで管理したい。</li>
 <li>高速なKVSを組合わせることで大量のリクエストを効率よく捌きたい。</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <p>通常のconfファイルで制御していたことを、ngx_mrubyを利用することでrubyスクリプトで動的に制御することができる。</p>
-
 <h3 id="リバースプロキシの実装">リバースプロキシの実装</h3>
-
 <p>リバースプロキシにはnginxを利用して、機能の実装については<a href="https://github.com/matsumoto-r/ngx_mruby">ngx_mruby</a> + <a href="https://github.com/matsumoto-r/mruby-memcached">mruby-memcached</a> + <a href="https://github.com/mattn/mruby-mysql">mruby-mysql</a>を利用する。</p>
-
 <h6 id="環境">環境</h6>
-
 <table>
 <thead>
 <tr>
@@ -247,82 +235,66 @@ ngx_mruby + mruby-memcached + mruby-mysql 環境構築のエントリを投稿�
 <th>バージョン</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td>OS</td>
 <td>CentOS 6.6</td>
 </tr>
-
 <tr>
 <td>kernel</td>
 <td>2.6.32-504.el6.x86_64</td>
 </tr>
-
 <tr>
 <td>■リバースプロキシ</td>
 <td></td>
 </tr>
-
 <tr>
 <td>Ruby</td>
 <td>2.2.4</td>
 </tr>
-
 <tr>
 <td>nginx</td>
 <td>1.9.14</td>
 </tr>
-
 <tr>
 <td>ngx_mruby</td>
 <td>1.1.17</td>
 </tr>
-
 <tr>
 <td>mruby-mysql</td>
 <td></td>
 </tr>
-
 <tr>
 <td>mruby-memcached</td>
 <td></td>
 </tr>
-
 <tr>
 <td>■KVS</td>
 <td></td>
 </tr>
-
 <tr>
 <td>memcached</td>
 <td>1.4.4</td>
 </tr>
-
 <tr>
 <td>■Database</td>
 <td></td>
 </tr>
-
 <tr>
 <td>mysql-server</td>
 <td>5.1.73-5</td>
 </tr>
-
 <tr>
 <td>■WEB</td>
 <td></td>
 </tr>
-
 <tr>
 <td>httpd</td>
 <td>2.2.15</td>
 </tr>
 </tbody>
 </table>
-
 <h3 id="検証における前提条件">検証における前提条件</h3>
-
 <ul>
 <li>リバースプロキシとなるサーバにnginx+ngx_mruby+mruby-memcached+mruby-mysqlの環境が構築されていること。</li>
 <li>データーベースとなるサーバにmysqlがインストールされていること。</li>
@@ -330,11 +302,8 @@ ngx_mruby + mruby-memcached + mruby-mysql 環境構築のエントリを投稿�
 <li>KVSとなるサーバにmemcachedがインストールされていること。</li>
 <li>各サーバのiptablesは適切に設定するか無効にしておくこと。</li>
 </ul>
-
-<h3 id="let-s-development">Let&rsquo;s development!!</h3>
-
+<h3 id="lets-development">Let&rsquo;s development!!</h3>
 <h4 id="本検証に出てくるホスト名一覧">本検証に出てくるホスト名一覧</h4>
-
 <table>
 <thead>
 <tr>
@@ -342,127 +311,88 @@ ngx_mruby + mruby-memcached + mruby-mysql 環境構築のエントリを投稿�
 <th>説明</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td>proxy.local</td>
 <td>ngx_mrubyが実装されたリバースプロキシ</td>
 </tr>
-
 <tr>
 <td>cache.local</td>
 <td>memcachedがインストールされたKVS</td>
 </tr>
-
 <tr>
 <td>database.local</td>
 <td>mysql-serverがインストールされたDBサーバ</td>
 </tr>
-
 <tr>
 <td>web[1,2].local</td>
 <td>httpdがインストールされた各種バーチャルホストを収容するWEBサーバ</td>
 </tr>
-
 <tr>
 <td>site-a.local</td>
 <td>web1.localに収容されているバーチャルサーバ</td>
 </tr>
-
 <tr>
 <td>site-b.local</td>
 <td>web1.localに収容されているバーチャルサーバ</td>
 </tr>
-
 <tr>
 <td>site-c.local</td>
 <td>web2.localに収容されているバーチャルサーバ</td>
 </tr>
 </tbody>
 </table>
-
 <h4 id="webサーバのバーチャルホストを設定">Webサーバのバーチャルホストを設定</h4>
-
 <h6 id="webサーバ共通設定">WEBサーバ共通設定</h6>
-
 <p>/etc/httpd/conf/httpd.conf</p>
-
 <pre><code># 以下をコメントイン
 NameVirtualHost *:80
-</code></pre>
-
-<h6 id="web1-localの設定">web1.localの設定</h6>
-
+</code></pre><h6 id="web1localの設定">web1.localの設定</h6>
 <p>/etc/httpd/conf.d/site-a.local.conf</p>
-
-<pre><code class="language-sh">&lt;VirtualHost *:80&gt;
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">&lt;VirtualHost *:80&gt;
     ServerName   site-a.local
     DocumentRoot /home/site-a.local/html
 &lt;/VirtualHost&gt;
-```sh
+<span class="sb">```</span>sh
 
 /etc/httpd/conf.d/site-b.local.conf
 
-```sh
+<span class="sb">```</span>sh
 &lt;VirtualHost *:80&gt;
     ServerName   site-b.local
     DocumentRoot /home/site-b.local/html
 &lt;/VirtualHost&gt;
-</code></pre>
-
-<p>/home/site-a.local/html/index.html</p>
-
-<pre><code class="language-sh">site-a.local's page
-</code></pre>
-
-<p>/home/site-b.local/html/index.html</p>
-
-<pre><code class="language-sh">site-b.local's page
-</code></pre>
-
-<h6 id="web2-localの設定">web2.localの設定</h6>
-
+</code></pre></div><p>/home/site-a.local/html/index.html</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">site-a.local<span class="err">&#39;</span>s page
+</code></pre></div><p>/home/site-b.local/html/index.html</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">site-b.local<span class="err">&#39;</span>s page
+</code></pre></div><h6 id="web2localの設定">web2.localの設定</h6>
 <p>/etc/httpd/conf.d/site-c.local.conf</p>
-
 <pre><code>&lt;VirtualHost *:80&gt;
     ServerName   site-c.local
     DocumentRoot /home/site-c.local/html
 &lt;/VirtualHost&gt;
-</code></pre>
-
-<p>/home/site-c.local/html/index.html</p>
-
+</code></pre><p>/home/site-c.local/html/index.html</p>
 <pre><code>site-c.local's page
-</code></pre>
-
-<h4 id="テスト用データベースの作成">テスト用データベースの作成</h4>
-
-<pre><code class="language-sql">create database domains default charset utf8;
-use domains;
-create table `domain` (
-  `id` int(255) NOT NULL AUTO_INCREMENT,
-  `domain` varchar(255) NOT NULL,
-  `host` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
-insert into domains.domain (domain, host) values ('site-a.local', 'web1.local');
-insert into domains.domain (domain, host) values ('site-b.local', 'web1.local');
-insert into domains.domain (domain, host) values ('site-c.local', 'web2.local');
-</code></pre>
-
-<h4 id="リバースプロキシの設定">リバースプロキシの設定</h4>
-
+</code></pre><h4 id="テスト用データベースの作成">テスト用データベースの作成</h4>
+<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">create</span> <span class="k">database</span> <span class="n">domains</span> <span class="k">default</span> <span class="n">charset</span> <span class="n">utf8</span><span class="p">;</span>
+<span class="n">use</span> <span class="n">domains</span><span class="p">;</span>
+<span class="k">create</span> <span class="k">table</span> <span class="o">`</span><span class="k">domain</span><span class="o">`</span> <span class="p">(</span>
+  <span class="o">`</span><span class="n">id</span><span class="o">`</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+  <span class="o">`</span><span class="k">domain</span><span class="o">`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="o">`</span><span class="k">host</span><span class="o">`</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+  <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="o">`</span><span class="n">id</span><span class="o">`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span>  <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span><span class="p">;</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">domains</span><span class="p">.</span><span class="k">domain</span> <span class="p">(</span><span class="k">domain</span><span class="p">,</span> <span class="k">host</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;site-a.local&#39;</span><span class="p">,</span> <span class="s1">&#39;web1.local&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">domains</span><span class="p">.</span><span class="k">domain</span> <span class="p">(</span><span class="k">domain</span><span class="p">,</span> <span class="k">host</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;site-b.local&#39;</span><span class="p">,</span> <span class="s1">&#39;web1.local&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">domains</span><span class="p">.</span><span class="k">domain</span> <span class="p">(</span><span class="k">domain</span><span class="p">,</span> <span class="k">host</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;site-c.local&#39;</span><span class="p">,</span> <span class="s1">&#39;web2.local&#39;</span><span class="p">);</span>
+</code></pre></div><h4 id="リバースプロキシの設定">リバースプロキシの設定</h4>
 <h6 id="今回の検証用にdnsmasqをインストール">今回の検証用にdnsmasqをインストール</h6>
-
-<p>各種サーバの名前解決のために、ローカルの&rdquo;/etc/hosts&rdquo;を参照してDNSクエリに応答するdnsmasqをインストールして起動しておきます。</p>
-
-<pre><code class="language-sh">yum install dnsmasq
+<p>各種サーバの名前解決のために、ローカルの&quot;/etc/hosts&quot;を参照してDNSクエリに応答するdnsmasqをインストールして起動しておきます。</p>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">yum install dnsmasq
 chkconfig dnsmasq on
 service dnsmasq start
-</code></pre>
-
-<p>以下のように名前解決ができればOK</p>
-
+</code></pre></div><p>以下のように名前解決ができればOK</p>
 <pre><code># dig @localhost localhost
 
 ; &lt;&lt;&gt;&gt; DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6 &lt;&lt;&gt;&gt; @localhost localhost
@@ -476,19 +406,12 @@ service dnsmasq start
 localhost.		0	IN	A	127.0.0.1
 
  :
-</code></pre>
-
-<h6 id="etc-hosts-に以下のエントリを追加しておく">&rdquo;/etc/hosts&rdquo; に以下のエントリを追加しておく</h6>
-
+</code></pre><h6 id="etchosts-に以下のエントリを追加しておく">&ldquo;/etc/hosts&rdquo; に以下のエントリを追加しておく</h6>
 <pre><code>WEBサーバ#1のIPアドレス    web1.local
 WEBサーバ#2のIPアドレス    web2.local
-</code></pre>
-
-<h6 id="プロキシするホストの設定">プロキシするホストの設定</h6>
-
+</code></pre><h6 id="プロキシするホストの設定">プロキシするホストの設定</h6>
 <p>/usr/local/nginx/conf/nginx.conf
 ＊以下を追記</p>
-
 <pre><code>server {
   location / {
     resolver              127.0.0.1;
@@ -506,89 +429,72 @@ WEBサーバ#2のIPアドレス    web2.local
     proxy_connect_timeout 300s;
   }
 }
-</code></pre>
-
-<h6 id="転送するホストをkvsやデータベースから引いたりするスクリプトを設定">転送するホストをKVSやデータベースから引いたりするスクリプトを設定</h6>
-
+</code></pre><h6 id="転送するホストをkvsやデータベースから引いたりするスクリプトを設定">転送するホストをKVSやデータベースから引いたりするスクリプトを設定</h6>
 <p>/usr/local/nginx/lib/proxy.rb</p>
+<div class="highlight"><pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="ch">#!mruby</span>
 
-<pre><code class="language-ruby">#!mruby
+<span class="c1"># memcachedの接続設定</span>
+<span class="n">memecached_server</span> <span class="o">=</span> <span class="s2">&#34;memcachedのIPアドレス:11211&#34;</span>
 
-# memcachedの接続設定
-memecached_server = &quot;memcachedのIPアドレス:11211&quot;
+<span class="c1"># mysqldの接続設定</span>
+<span class="n">mysql_server</span>      <span class="o">=</span> <span class="s2">&#34;mysqldのIPアドレス&#34;</span>
+<span class="n">mysql_user</span>        <span class="o">=</span> <span class="s2">&#34;root&#34;</span>
+<span class="n">mysql_password</span>    <span class="o">=</span> <span class="s2">&#34;PASSWORD&#34;</span>
+<span class="n">mysql_database</span>    <span class="o">=</span> <span class="s2">&#34;domains&#34;</span>
 
-# mysqldの接続設定
-mysql_server      = &quot;mysqldのIPアドレス&quot;
-mysql_user        = &quot;root&quot;
-mysql_password    = &quot;PASSWORD&quot;
-mysql_database    = &quot;domains&quot;
+<span class="c1"># クライアントのリクエストホストを取得</span>
+<span class="n">request_domain</span> <span class="o">=</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">Var</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">http_host</span>
 
-# クライアントのリクエストホストを取得
-request_domain = Nginx::Var.new.http_host
+<span class="c1"># memcachedから転送先ホストの情報を取得</span>
+<span class="n">memcached</span> <span class="o">=</span> <span class="no">Memcached</span><span class="o">.</span><span class="n">new</span> <span class="n">memecached_server</span>
+<span class="n">webserver</span>  <span class="o">=</span> <span class="n">memcached</span><span class="o">.</span><span class="n">get</span> <span class="n">request_domain</span>
 
-# memcachedから転送先ホストの情報を取得
-memcached = Memcached.new memecached_server
-webserver  = memcached.get request_domain
+<span class="c1"># memcachedに存在しなければmysqlに問合せる、存在していればクロージング処理へ</span>
+<span class="k">if</span> <span class="n">webserver</span> <span class="o">==</span> <span class="kp">nil</span> <span class="k">then</span>
 
-# memcachedに存在しなければmysqlに問合せる、存在していればクロージング処理へ
-if webserver == nil then
+  <span class="c1"># 転送先ホストの情報を取得</span>
+  <span class="n">mysqld</span>       <span class="o">=</span> <span class="no">MySQL</span><span class="o">::</span><span class="no">Database</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">mysql_server</span><span class="p">,</span> <span class="n">mysql_user</span><span class="p">,</span> <span class="n">mysql_password</span><span class="p">,</span> <span class="n">mysql_database</span><span class="p">)</span>
+  <span class="n">mysql_result</span> <span class="o">=</span> <span class="n">mysqld</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&#34;SELECT host FROM users WHERE domain = ? LIMIT 1&#34;</span><span class="p">,</span> <span class="s2">&#34;</span><span class="si">#{</span><span class="n">request_domain</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
 
-  # 転送先ホストの情報を取得
-  mysqld       = MySQL::Database.new(mysql_server, mysql_user, mysql_password, mysql_database)
-  mysql_result = mysqld.execute(&quot;SELECT host FROM users WHERE domain = ? LIMIT 1&quot;, &quot;#{request_domain}&quot;)
+  <span class="c1"># if recode is not found</span>
+  <span class="k">if</span> <span class="n">mysql_result</span> <span class="o">!=</span> <span class="kp">nil</span> <span class="k">then</span>
+    <span class="n">webserver</span> <span class="o">=</span> <span class="n">mysql_result</span><span class="o">.</span><span class="n">next</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
 
-  # if recode is not found
-  if mysql_result != nil then
-    webserver = mysql_result.next[0]
+    <span class="c1"># mysql closing</span>
+    <span class="n">mysql_result</span><span class="o">.</span><span class="n">close</span>
+    <span class="n">mysqld</span><span class="o">.</span><span class="n">close</span>
 
-    # mysql closing
-    mysql_result.close
-    mysqld.close
+    <span class="c1"># set memcached</span>
+    <span class="n">memcached</span><span class="o">.</span><span class="n">set</span> <span class="n">request_domain</span><span class="p">,</span> <span class="n">webserver</span>
+  <span class="k">else</span>
+    <span class="c1"># 転送先情報が存在しない場合の処理を記載</span>
+    <span class="c1"># エラーページを格納するサーバを記載するなど。</span>
+    <span class="c1"># 必要に応じて、ネガティブキャッシュを実装すれば無駄なデータベース参照を減らせるかも。</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-    # set memcached
-    memcached.set request_domain, webserver
-  else
-    # 転送先情報が存在しない場合の処理を記載
-    # エラーページを格納するサーバを記載するなど。
-    # 必要に応じて、ネガティブキャッシュを実装すれば無駄なデータベース参照を減らせるかも。
-  end
-end
+<span class="c1"># closing memecached</span>
+<span class="n">memcached</span><span class="o">.</span><span class="n">close</span>
 
-# closing memecached
-memcached.close
-
-# mruby_setにデータを渡す
-webserver
-</code></pre>
-
-<h4 id="動作確認">動作確認</h4>
-
-<h6 id="クライアントの-etc-hosts-に以下を記載する">クライアントの&rdquo;/etc/hosts&rdquo;に以下を記載する。</h6>
-
+<span class="c1"># mruby_setにデータを渡す</span>
+<span class="n">webserver</span>
+</code></pre></div><h4 id="動作確認">動作確認</h4>
+<h6 id="クライアントのetchostsに以下を記載する">クライアントの&quot;/etc/hosts&quot;に以下を記載する。</h6>
 <pre><code>リバースプロキシのIPアドレス　　　　site-a.local site-b.local site-c.local
-</code></pre>
-
-<h6 id="クライアントからアクセスしてみる">クライアントからアクセスしてみる</h6>
-
-<pre><code class="language-sh">$ curl http://site-a.local
+</code></pre><h6 id="クライアントからアクセスしてみる">クライアントからアクセスしてみる</h6>
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">$ curl http://site-a.local
 site-a.local
-</code></pre>
-
-<p>DBから値を取得して適切なサイトに転送できたことが確認できる。</p>
-
+</code></pre></div><p>DBから値を取得して適切なサイトに転送できたことが確認できる。</p>
 <h6 id="kvsにキャッシュエントリが存在するか確認してみる">KVSにキャッシュエントリが存在するか確認してみる</h6>
-
-<pre><code class="language-sh"># telnet localhost 11211
+<div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh"><span class="c1"># telnet localhost 11211</span>
 Trying ::1...
 Connected to localhost.
-Escape character is '^]'.
-get site-a.local 0 1
-VALUE site-a.local 0 10
+Escape character is <span class="s1">&#39;^]&#39;</span>.
+get site-a.local <span class="m">0</span> <span class="m">1</span>
+VALUE site-a.local <span class="m">0</span> <span class="m">10</span>
 web1.local
 END
-</code></pre>
-
-<p>done.</p>
+</code></pre></div><p>done.</p>
 
       </article>
 
@@ -681,7 +587,7 @@ END
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>

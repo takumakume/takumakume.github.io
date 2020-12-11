@@ -8,9 +8,9 @@
   <title>ngx_mruby v2 の新機能を見る | takumakume pages</title>
   <meta property="og:title" content="ngx_mruby v2 の新機能を見る" />
   <meta name="twitter:title" content="ngx_mruby v2 の新機能を見る" />
-  <meta name="description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 ngx_mrubyのv2-devブラ">
-  <meta property="og:description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 ngx_mrubyのv2-devブラ">
-  <meta name="twitter:description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 ngx_mrubyのv2-devブラ">
+  <meta name="description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 機能としては、大きく以下のような追加">
+  <meta property="og:description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 機能としては、大きく以下のような追加">
+  <meta name="twitter:description" content="@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 機能としては、大きく以下のような追加">
   <meta name="author" content="Takuma Kume"/>
   <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
   <meta property="og:image" content="/img/profile.jpg" />
@@ -20,7 +20,7 @@
   <meta name="twitter:creator" content="@takumakume" />
 
 
-  <meta name="generator" content="Hugo 0.37.1" />
+  <meta name="generator" content="Hugo 0.79.0" />
   <link rel="canonical" href="/blog/2018-05-02-ngx_mruby_v2/" />
   <link rel="alternate" href="" type="application/rss+xml" title="takumakume pages">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
@@ -84,12 +84,16 @@
     </div>
 </div>
 
-<script>
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-109817270-1', 'auto');
-ga('send', 'pageview');
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
 </script>
-<script async src='//www.google-analytics.com/analytics.js'></script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 </head>
 
@@ -192,92 +196,61 @@ ga('send', 'pageview');
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       <article role="main" class="blog-post">
-        
-
-<p><a href="https://twitter.com/matsumotory">@matsumotory</a> さんが <a href="https://github.com/matsumotory/ngx_mruby">ngx_mruby</a> の <a href="https://github.com/matsumotory/ngx_mruby/tree/v2-dev">v2-dev</a> を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。</p>
-
-<p><blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">ngx_mrubyのv2-devブランチ、ノンブロックsleepとか実装済みなので、ノンブロックなメソッドと組み合わせて自前イベントループとか作れると思うので是非お試しください。さらにはRubyのスクリプトはfiberで実行されるように大きく変更したので何か問題があればissueにして頂けるとこれまた幸いです。</p>&mdash; 松本 亮介 / まつもとりー (@matsumotory) <a href="https://twitter.com/matsumotory/status/991357435930558464?ref_src=twsrc%5Etfw">2018年5月1日</a></blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
-
+        <p><a href="https://twitter.com/matsumotory">@matsumotory</a> さんが <a href="https://github.com/matsumotory/ngx_mruby">ngx_mruby</a> の <a href="https://github.com/matsumotory/ngx_mruby/tree/v2-dev">v2-dev</a> を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。</p>
+<!-- raw HTML omitted -->
 <p>機能としては、大きく以下のような追加になるとのこと。</p>
-
 <ul>
 <li><code>return</code> の実装</li>
 <li><code>Nginx::Async.sleep</code> の実装</li>
 <li>ノンブロッキングなhttpクライアントの実装（comming soon）</li>
 </ul>
-
 <p>本エントリでは、それぞれの機能について見ていく。</p>
-
 <h3 id="return-の実装"><code>return</code> の実装</h3>
-
 <p>これまで以下のようなコードは、初見だと意図しない挙動をする。</p>
-
-<pre><code class="language-rb">Nginx.echo &quot;OK&quot;
-Nginx.return Nginx::DECLINED  # ここでプログラムからreturnすると思いがち
-Nginx.echo &quot;NG&quot;
-# =&gt; &quot;OKNG&quot;
-</code></pre>
-
-<p>対応方法として、以下のようにLambdaで記述していた。</p>
-
-<pre><code class="language-rb">Nginx.return -&gt; do
-  Nginx.echo &quot;OK&quot;
-  return Nginx::DECLINED
-  Nginx.echo &quot;NG&quot;
-end
-# =&gt; &quot;OK&quot;
-</code></pre>
-
-<p>v2からは以下のように記述可能</p>
-
-<pre><code class="language-rb">Nginx.echo &quot;OK&quot;
-Nginx.return Nginx::DECLINED
-return
-Nginx.echo &quot;NG&quot;
-# =&gt; &quot;OK&quot;
-</code></pre>
-
-<h3 id="nginx-async-sleep-の実装"><code>Nginx::Async.sleep</code> の実装</h3>
-
+<div class="highlight"><pre class="chroma"><code class="language-rb" data-lang="rb"><span class="no">Nginx</span><span class="o">.</span><span class="n">echo</span> <span class="s2">&#34;OK&#34;</span>
+<span class="no">Nginx</span><span class="o">.</span><span class="n">return</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">DECLINED</span>  <span class="c1"># ここでプログラムからreturnすると思いがち</span>
+<span class="no">Nginx</span><span class="o">.</span><span class="n">echo</span> <span class="s2">&#34;NG&#34;</span>
+<span class="c1"># =&gt; &#34;OKNG&#34;</span>
+</code></pre></div><p>対応方法として、以下のようにLambdaで記述していた。</p>
+<div class="highlight"><pre class="chroma"><code class="language-rb" data-lang="rb"><span class="no">Nginx</span><span class="o">.</span><span class="n">return</span> <span class="o">-&gt;</span> <span class="k">do</span>
+  <span class="no">Nginx</span><span class="o">.</span><span class="n">echo</span> <span class="s2">&#34;OK&#34;</span>
+  <span class="k">return</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">DECLINED</span>
+  <span class="no">Nginx</span><span class="o">.</span><span class="n">echo</span> <span class="s2">&#34;NG&#34;</span>
+<span class="k">end</span>
+<span class="c1"># =&gt; &#34;OK&#34;</span>
+</code></pre></div><p>v2からは以下のように記述可能</p>
+<div class="highlight"><pre class="chroma"><code class="language-rb" data-lang="rb"><span class="no">Nginx</span><span class="o">.</span><span class="n">echo</span> <span class="s2">&#34;OK&#34;</span>
+<span class="no">Nginx</span><span class="o">.</span><span class="n">return</span> <span class="no">Nginx</span><span class="o">::</span><span class="no">DECLINED</span>
+<span class="k">return</span>
+<span class="no">Nginx</span><span class="o">.</span><span class="n">echo</span> <span class="s2">&#34;NG&#34;</span>
+<span class="c1"># =&gt; &#34;OK&#34;</span>
+</code></pre></div><h3 id="nginxasyncsleep-の実装"><code>Nginx::Async.sleep</code> の実装</h3>
 <p>ノンブロッキングsleepの実装。1 nginx workerプロセスの動きを説明する。</p>
-
 <ul>
-<li>これまでのngx_mruby</li>
+<li>
+<p>これまでのngx_mruby</p>
+<p><img src="/img/2018-05-02/blocking.png" alt="image"></p>
+</li>
+<li>
+<p>v2のngx_mruby</p>
+<p><img src="/img/2018-05-02/non_blocking.png" alt="image"></p>
+</li>
 </ul>
-
-<p><img src="/img/2018-05-02/blocking.png" alt="image" /></p>
-
-<ul>
-<li>v2のngx_mruby</li>
-</ul>
-
-<p><img src="/img/2018-05-02/non_blocking.png" alt="image" /></p>
-
 <p>このように、処理ができる。
 つまり、何か重い処理やや外部コマンドを実行するようなときにsleepさせて別の処理を実行するということが可能となる。</p>
-
 <p>実際の実装や動作については、以下が非常に参考になる。</p>
-
 <ul>
 <li><a href="http://hb.matsumoto-r.jp/entry/2018/02/22/000546">HTTPリクエスト単位でmrubyのバイトコードをProcとFiberで包みなおして実行した場合の性能とv2について</a></li>
 </ul>
-
 <p>ノンブロッキングについては、以下の記事が非常に参考になった。</p>
-
 <ul>
 <li><a href="http://keens.github.io/blog/2017/05/19/hidoukitononburokkingutoatonanika/">非同期とノンブロッキングとあと何か - κeenのHappy Hacκing Blog</a></li>
 <li><a href="http://blog.matsumoto-r.jp/?p=2030">非同期I/OやノンブロッキングI/O及びI/Oの多重化について - 人間とウェブの未来</a></li>
 </ul>
-
-<h3 id="ノンブロッキングなhttpクライアントの実装-comming-soon">ノンブロッキングなhttpクライアントの実装（comming soon）</h3>
-
+<h3 id="ノンブロッキングなhttpクライアントの実装comming-soon">ノンブロッキングなhttpクライアントの実装（comming soon）</h3>
 <p>社内で　@matsumotory さんから聞いた情報によると、ノンブロッキングなhttpクライアントの機能が実装されるとのこと。</p>
-
 <p>これは、非常に便利で極力な機能で、例としてはnginxの挙動を外部APIの実行結果を元に変更するようなことをしたい場合に、これまでhttpリクエストの処理中はブロッキングされていたがv2から実装される機能を利用するとその間は別の処理を行うことができるため全体的に高速に動作するようになる。</p>
-
 <p>私が担当するプロダクトについては、nginxの挙動を変更するためのパラメータをMySQLのデータベースからRedisにキャッシュしつつ取得している。その為、nginx側にビジネスロジックを持っていてそれが変更になることによって同様の変更をする必要がある。ビジネスロジックをもつhttpベースのAPIが存在するため、そちらから取得すればビジネスロジックの変更に強いし今回のノンブロッキング化が入ることで実現の可能性がある。</p>
-
 <p>これと関連して、mruby-mysqlやmruby-redisなどブロッキングが発生する処理についてもノンブロッキングなメソッドを新たに実装することによって、ngx_mrubyとの組み合わせで同様な効果が得られるため今後の進化の幅が広がったと思える。</p>
 
       </article>
@@ -367,7 +340,7 @@ Nginx.echo &quot;NG&quot;
         </p>
         
         <p class="credits theme-by text-muted">
-          <a href="http://gohugo.io">Hugo v0.37.1</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
+          <a href="http://gohugo.io">Hugo v0.79.0</a> powered Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a>
           
         </p>
       </div>
