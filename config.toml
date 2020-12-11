@@ -1,0 +1,59 @@
+title                  = "takumakume pages"
+baseURL                = "/"
+DefaultContentLanguage = "ja"
+hasCJKLanguage = true
+
+theme               = "beautifulhugo"
+metaDataFormat      = "yaml"
+pygmentsUseClasses  = true
+pygmentCodeFences   = true
+googleAnalytics     = "UA-109817270-1"
+#disqusShortname     = "XXX"
+
+[Params]
+  subtitle = ""
+  logo = "img/profile.jpg"
+  favicon = "img/favicon.ico"
+  dateFormat = "2006-1-2"
+  commit = false
+  rss = true
+  comments = false
+
+[Author]
+  name        = "Takuma Kume"
+  website     = "https://takumakume.tech"
+  #email       = ""
+  facebook    = "takumakume"
+  github      = "takumakume"
+  twitter     = "takumakume"
+  instagram   = "takumakume"
+  #googleplus = "+takumakume" # or xxxxxxxxxxxxxxxxxxxxx
+  #gitlab = "takumakume"
+  #reddit = "takumakume"
+  #linkedin = "takumakume"
+  #xing = "takumakume"
+  #stackoverflow = "users/XXXXXXX/takumakume"
+  #snapchat = "takumakume"
+  #youtube = "user/takumakume" # or channel/channelname
+  #soundcloud = "takumakume"
+  #spotify = "takumakume"
+  #bandcamp = "takumakume"
+  #itchio = "takumakume"
+  #vk = "takumakume"
+  #paypal = "takumakume"
+  #telegram = "takumakume"
+
+[[menu.main]]
+  name = "Blog"
+  url = "blog"
+  weight = 1
+
+[[menu.main]]
+  name = "Tags"
+  url = "tags"
+  weight = 2
+
+[[menu.main]]
+  name = "About Me"
+  url = "about"
+  weight = 3
