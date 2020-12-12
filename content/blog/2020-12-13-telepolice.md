@@ -27,7 +27,7 @@ tags: ["kubernetes", "telepresence", "telepolice"]
 
 ## はじめに
 
-私は、kumesecこと @takumakume です。
+kumesec こと @takumakume です。
 GMOペパボのホスティング事業部でSREをしています。
 
 現在の仕事はVMベースのインフラ上で運用しているWebアプリケーションを、kubernetesをはじめとしたツールの導入によりクラウドネィティブにしていくことです。
