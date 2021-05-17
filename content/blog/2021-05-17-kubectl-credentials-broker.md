@@ -12,9 +12,9 @@ tags: ["cloudnative", "kubernetes", "kubectl-credentials-broker"]
 
 ## kubectl-credentials-broker とは
 
-一言でいうと、kubectlを実行時に任意のコマンドを実行して指定されたクライアント証明書やトークンのファイルを読み取って、kube-apiserverの認証に利用する kubectl の plugin です。
+一言でいうと、 kubectl 実行時に任意のコマンドを実行して指定されたクライアント証明書やトークンのファイルを読み取って、kube-apiserverの認証情報として利用する kubectl の plugin です。
 
-任意のコマンドは、kube-apiserverの認証に使うクライアント証明書やトークンが有効でない場合に、何らかの処理を実行してそれらを取得しファイルに出力することを想定しています。
+任意のコマンドは、kube-apiserverの認証に使うクライアント証明書やトークンが有効でない場合に、何らかの処理を実行して、それらを取得しファイルに出力することを想定しています。
 
 この説明を図にすると以下のようになります。
 
@@ -28,14 +28,15 @@ tags: ["cloudnative", "kubernetes", "kubectl-credentials-broker"]
 
 ![image](/img/2021-05-17/auth.jpeg)
 
-`グリーン` で示した部分は、Githubのトークンによる認証認可です。Githubのトークンをが有効であることを検証することで認証します。更にトークンのユーザ名を使ってkubernetesのRBACを使って認可をする仕組みです。
+`グリーン` で示した部分は、Githubのトークンによる認証・認可です。リクエストに付与されたGithubのトークンが有効であることを検証することで認証しています。更にトークンのユーザ名を使って kubernetes の RBAC を使って認可をする仕組みです。
 
-この仕組みと固定IPアドレスによるアクセス制限をすることで多層防御となり実運用に耐えうるセキュリティレベルを担保することができそうです。
-しかし、このモデルの場合はVPN等を活用して指定のIPアドレスからアクセスする必要があり煩雑です。
+この仕組みに加えて、固定IPアドレスによるアクセス制限をすることで多層防御となり実運用に耐えうるセキュリティレベルを担保することができそうです。
+しかし、このモデルの場合はVPN等を活用して指定のIPアドレスからアクセスをする必要があり煩雑です。
 
-この問題を解決するために、IPアドレスベースの境界モデルをやめてPublicなインターネットに安全にkube-apiserverのエンドポイントを公開したいと考えました。
+私はこの問題を解決するために、IPアドレスベースの境界モデルをやめてPublicなインターネットに安全にkube-apiserverのエンドポイントを公開したいと考えました。
 
-手段は無数にあるでしょうが、今回は以下の `ブルー` で示した仕組みを入れてみます。HashiCorp VaultのPKIを認証局として、kube-apiserverの前段にmTLSを行うreverse proxyを配置する方法です。
+手段は無数にあるでしょうが、今回は以下の `ブルー` で示した仕組みを入れてみます。
+HashiCorp VaultのPKIを認証局として、kube-apiserverの前段にmTLSを行うreverse proxyを配置する方法です。
 
 この方法では、安全のためにクライアントに発行するクライアント証明書の有効期限を24hにしています。
 
@@ -44,7 +45,7 @@ tags: ["cloudnative", "kubernetes", "kubectl-credentials-broker"]
 
 ## 動作概要
 
-`kubectl-credentials-broker` は [`kubernetes client-go credential plugin`](https://kubernetes.io/ja/docs/reference/access-authn-authz/authentication/#client-go%E3%82%AF%E3%83%AC%E3%83%87%E3%83%B3%E3%82%B7%E3%83%A3%E3%83%AB%E3%83%97%E3%83%A9%E3%82%B0%E3%82%A4%E3%83%B3) という仕組みを使っています。これは kubectl 実行時に外部コマンドを実行してユーザーの認証情報を取得する仕組みです。外部コマンドが以下のような形式のJSONを出力することで、kubectlが認証情報として利用します。
+`kubectl-credentials-broker` は [kubernetes client-go credential plugin](https://kubernetes.io/ja/docs/reference/access-authn-authz/authentication/#client-go%E3%82%AF%E3%83%AC%E3%83%87%E3%83%B3%E3%82%B7%E3%83%A3%E3%83%AB%E3%83%97%E3%83%A9%E3%82%B0%E3%82%A4%E3%83%B3) という仕組みを使っています。これは kubectl 実行時に外部コマンドを実行してユーザーの認証情報を取得する仕組みです。外部コマンドが以下のような形式のJSONを出力することで、kubectlが認証情報として利用します。
 
 ```json
 {
@@ -65,7 +66,7 @@ tags: ["cloudnative", "kubernetes", "kubectl-credentials-broker"]
 
 ## 導入例
 
-kubernetes client-go credential plugin の機能を使うために、 kubeconfig の current-context の user に対して以下の設定をする必要があります。
+kubernetes client-go credential plugin の機能を使うためには、 kubeconfig の current-context の user に対して以下の設定をする必要があります。
 
 ```yaml
 users:
@@ -120,8 +121,8 @@ if [ ! -e "/path/to/token" ]; then
 fi
 ```
 
-この例では、証明書が有効ではない時と、トークンファイルが存在しないときに何かしらの処理をするシェルスクリプトです。
-`--before-exec-command` で指定するコマンドは、kubectlが実行されるたびに実行するため、認証情報を更新する必要がない場合は軽量に保つほうが良いです。
+この例では、証明書が無効な時と、トークンファイルが存在しないときに何かしらの処理をするシェルスクリプトです。
+なお、 `--before-exec-command` で指定するコマンドは、kubectlが実行されるたびに実行されるため、認証情報を更新する必要がない場合は軽量に保つほうが良いです。
 
 以上がツールの説明です。
 
