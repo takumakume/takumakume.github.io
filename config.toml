@@ -1,6 +1,6 @@
 title                  = "takumakume pages"
 baseURL                = "/"
-DefaultContentLanguage = "ja"
+languageCode = 'ja-jp'
 hasCJKLanguage = true
 
 theme               = "beautifulhugo"
