@@ -9,4 +9,3 @@ tags: ["cloudnative", "kubernetes"]
 ---
 
 作りました。
-テスト
