@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>linux on takumakume pages</title>
+    <link>/tags/linux/</link>
+    <description>Recent content in linux on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Mon, 18 Dec 2017 00:00:00 +0900</lastBuildDate><atom:link href="/tags/linux/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF入門についてKixs vol.006で登壇した</title>
+      <link>/blog/2017-12-18-ebpf-getting-started/</link>
+      <pubDate>Mon, 18 Dec 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2017-12-18-ebpf-getting-started/</guid>
+      <description>GMOペパボ Advent Calendar 2017 の18日目の記事です。 九州インフラ交流勉強会(Kixs) Vol.006 というイベントで「eBPF入門」というタイトルで登壇した。 当日の</description>
+    </item>
+    
+    <item>
+      <title>Linuxのスレッド内でchrootした場合の影響範囲を調べた</title>
+      <link>/blog/2017-01-18-chroot/</link>
+      <pubDate>Wed, 18 Jan 2017 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2017-01-18-chroot/</guid>
+      <description>今年の目標は「はじめから無理と思わない」「基礎を学ぶ」なので、C言語からも逃げずに立ち向かう1年にしたい。 本日は、Linuxのスレッド内でc</description>
+    </item>
+    
+  </channel>
+</rss>

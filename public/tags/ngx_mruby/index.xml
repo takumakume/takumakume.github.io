@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ngx_mruby on takumakume pages</title>
+    <link>/tags/ngx_mruby/</link>
+    <description>Recent content in ngx_mruby on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Wed, 02 May 2018 09:54:10 +0900</lastBuildDate><atom:link href="/tags/ngx_mruby/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ngx_mruby v2 の新機能を見る</title>
+      <link>/blog/2018-05-02-ngx_mruby_v2/</link>
+      <pubDate>Wed, 02 May 2018 09:54:10 +0900</pubDate>
+      
+      <guid>/blog/2018-05-02-ngx_mruby_v2/</guid>
+      <description>@matsumotory さんが ngx_mruby の v2-dev を開発中ということで、社のプロダクションに入れていくため新機能について調べたのでまとめる。 機能としては、大きく以下のような追加</description>
+    </item>
+    
+    <item>
+      <title>ngx_mrubyでmemcachedやmysqldのコネクションを使いまわす(性能測定)</title>
+      <link>/blog/2016-07-15-connection-recycle-measure/</link>
+      <pubDate>Fri, 15 Jul 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-07-15-connection-recycle-measure/</guid>
+      <description>はじめに どうも、GMOペパボ 久米です。 そろそろ（最初から）雇用形態の話は面白くないので、これからのはじめの挨拶は何にしようか悩んでいます。 さ</description>
+    </item>
+    
+    <item>
+      <title>ngx_mrubyでmemcachedやmysqldのコネクションを使いまわす</title>
+      <link>/blog/2016-07-14-connection-recycle/</link>
+      <pubDate>Thu, 14 Jul 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-07-14-connection-recycle/</guid>
+      <description>はじめに どうも、GMOペパボ インフラエンジニア 正規雇用となりました久米です。 以下のエントリでngx_mrubyを用いたリバースプロキシを構築</description>
+    </item>
+    
+    <item>
+      <title>ngx_mrubyで転送先を外部参照するリバースプロキシを構築する</title>
+      <link>/blog/2016-05-10-ngx-mruby-reverse-proxy/</link>
+      <pubDate>Tue, 10 May 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-05-10-ngx-mruby-reverse-proxy/</guid>
+      <description>はじめに どうも、GMOペパボ 試用期間の久米です。 ngx_mruby + mruby-memcached + mruby-mysql 環境構築のエントリを投稿しましたが、それを使ったリバースプロキシの構築についてまと</description>
+    </item>
+    
+    <item>
+      <title>CentOS6で ngx_mruby &#43; mruby-memcached &#43; mruby-mysql をインストールした</title>
+      <link>/blog/2016-04-11-try-install-ngx-mruby/</link>
+      <pubDate>Mon, 11 Apr 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-04-11-try-install-ngx-mruby/</guid>
+      <description>こんばんは。GMOペパボ試用期間の久米です。 以下の要件のリバースプロキシサーバを作成したいため、ngx_mrubyを触ってみました。 リクエス</description>
+    </item>
+    
+  </channel>
+</rss>

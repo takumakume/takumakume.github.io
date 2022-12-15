@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>blog on takumakume pages</title>
+    <link>/tags/blog/</link>
+    <description>Recent content in blog on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Sat, 18 Nov 2017 23:27:31 +0900</lastBuildDate><atom:link href="/tags/blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ブログ引っ越しました！</title>
+      <link>/blog/2017-11-18-new-blog/</link>
+      <pubDate>Sat, 18 Nov 2017 23:27:31 +0900</pubDate>
+      
+      <guid>/blog/2017-11-18-new-blog/</guid>
+      <description>旧ブログ http://blog.konbu.link/ エントリは全てこのブログに移行しています！</description>
+    </item>
+    
+    <item>
+      <title>2016年の振り返り〜エンジニアとして這い上がる</title>
+      <link>/blog/2016-12-31-refrection-2016/</link>
+      <pubDate>Sat, 31 Dec 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-12-31-refrection-2016/</guid>
+      <description>他社の優秀なエンジニアの方々やペパボにいる尊敬しているエンジニアが次々に振り返りエントリを書いていて、どれも感慨深いなぁ〜と思って見ていた。</description>
+    </item>
+    
+    <item>
+      <title>ペパボに入社して1ヶ月が過ぎた</title>
+      <link>/blog/2016-05-14-join-pepabo-a-month-ago/</link>
+      <pubDate>Sat, 14 May 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-05-14-join-pepabo-a-month-ago/</guid>
+      <description>こんばんは。 GMOペパボ試用期間の久米です。 今年の4/1付でペパボに入社しました。 主にレンタルサーバサービスのロリポップ！のインフラエンジニ</description>
+    </item>
+    
+  </channel>
+</rss>

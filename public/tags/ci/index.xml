@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ci on takumakume pages</title>
+    <link>/tags/ci/</link>
+    <description>Recent content in ci on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Wed, 17 Aug 2016 00:00:00 +0900</lastBuildDate><atom:link href="/tags/ci/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコードを書く</title>
+      <link>/blog/2016-08-17-mruby-mtest/</link>
+      <pubDate>Wed, 17 Aug 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-08-17-mruby-mtest/</guid>
+      <description>はじめに こんにちは。 GMOペパボの久米です。 今回はngx_mrubyやmod_mrubyで動作させるmrubyスクリプトのテストコードをii</description>
+    </item>
+    
+    <item>
+      <title>mrubyのCIをdocker&#43;rake&#43;travis-ciでやる</title>
+      <link>/blog/2016-08-17-mruby-ci/</link>
+      <pubDate>Wed, 17 Aug 2016 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2016-08-17-mruby-ci/</guid>
+      <description>はじめに こんばんは、GMOペパボの久米です。 今回は「mruby-mtestでngx_mrubyやmod_mrubyで使うmrubyのテストコ</description>
+    </item>
+    
+  </channel>
+</rss>

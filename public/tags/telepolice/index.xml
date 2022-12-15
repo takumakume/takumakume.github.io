@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>telepolice on takumakume pages</title>
+    <link>/tags/telepolice/</link>
+    <description>Recent content in telepolice on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Sat, 12 Dec 2020 00:00:00 +0900</lastBuildDate><atom:link href="/tags/telepolice/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>telepresenceを用いた開発環境における現状の課題</title>
+      <link>/blog/2020-12-13-telepolice/</link>
+      <pubDate>Sat, 12 Dec 2020 00:00:00 +0900</pubDate>
+      
+      <guid>/blog/2020-12-13-telepolice/</guid>
+      <description>この記事は GMO ペパボエンジニア Advent Calendar 2020 の 13日目 の記事です。 昨日は @mrtc0 さんの 「Kubernetes のセキュリティを学べる kubectf を作った」 でした。 私も社</description>
+    </item>
+    
+  </channel>
+</rss>

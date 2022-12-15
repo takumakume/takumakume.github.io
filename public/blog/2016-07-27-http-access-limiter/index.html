@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" itemscope itemtype="http://schema.org/WebPage">
+  <head>
+    
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <title>mod_mruby &#43; http-access-limiterでファイル単位での同時アクセス数を制御し性能比較をした - takumakume pages</title>
+  <meta name="description" content="はじめに こんばんは、GMOペパボの久米です。 「httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する」というエントリを書きま">
+  <meta name="author" content="Takuma Kume"/><script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "WebSite",
+    "name": "takumakume pages",
+    
+    "url": "\/"
+}
+</script><script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "Organization",
+  "name": "",
+  "url": "\/"
+  
+  
+  
+  
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@id": "\/",
+          "name": "home"
+        }
+    },{
+        "@type": "ListItem",
+        "position": 3,
+        "item": {
+          "@id": "\/blog\/2016-07-27-http-access-limiter\/",
+          "name": "Mod mruby HTTP access limiterでファイル単位での同時アクセス数を制御し性能比較をした"
+        }
+    }]
+}
+</script><script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "Article",
+  "author": {
+    "name" : "Takuma Kume"
+  },
+  "headline": "mod_mruby \u002b http-access-limiterでファイル単位での同時アクセス数を制御し性能比較をした",
+  "description" : "はじめに こんばんは、GMOペパボの久米です。 「httpd \u002b mod_mrubyでプログラマブルなWEBサーバを構築する」というエントリを書きま",
+  "inLanguage" : "en",
+  "wordCount":  2592 ,
+  "datePublished" : "2016-07-27T00:00:00",
+  "dateModified" : "2016-07-27T00:00:00",
+  "image" : "\/img\/profile.jpg",
+  "keywords" : [ "mruby, mod_mruby" ],
+  "mainEntityOfPage" : "\/blog\/2016-07-27-http-access-limiter\/",
+  "publisher" : {
+    "@type": "Organization",
+    "name" : "\/",
+    "logo" : {
+        "@type" : "ImageObject",
+        "url" : "\/img\/profile.jpg",
+        "height" :  60 ,
+        "width" :  60
+    }
+  }
+}
+</script>
+
+<meta property="og:title" content="mod_mruby &#43; http-access-limiterでファイル単位での同時アクセス数を制御し性能比較をした" />
+<meta property="og:description" content="はじめに こんばんは、GMOペパボの久米です。 「httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する」というエントリを書きま">
+<meta property="og:image" content="/img/profile.jpg" />
+<meta property="og:url" content="/blog/2016-07-27-http-access-limiter/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="takumakume pages" />
+
+  <meta name="twitter:title" content="mod_mruby &#43; http-access-limiterでファイル単位での同時アクセス数を制御し性能比較をした" />
+  <meta name="twitter:description" content="はじめに こんばんは、GMOペパボの久米です。 「httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する」というエントリを書きま">
+  <meta name="twitter:image" content="/img/profile.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@takumakume" />
+  <meta name="twitter:creator" content="@takumakume" />
+  <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
+  <meta name="generator" content="Hugo 0.105.0">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="takumakume pages"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"><link rel="stylesheet" href="/css/main.css" /><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" /><link rel="stylesheet" href="/css/syntax.css" /><link rel="stylesheet" href="/css/codeblock.css" /><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.css" integrity="sha384-h/L2W9KefUClHWaty3SLE5F/qvc4djlyR4qY3NUV5HGQBBW7stbcfff1+I/vmsHh" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/default-skin/default-skin.min.css" integrity="sha384-iD0dNku6PYSIQLyfTOpB06F2KCZJAKLOThS5HRe8b3ibhdEQ6eKsFf/EeFxdOt5R" crossorigin="anonymous">
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+  </head>
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top navbar-custom">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">takumakume pages</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="nav navbar-nav navbar-right">
+        
+          
+            <li>
+              <a title="Blog" href="/blog">Blog</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="Tags" href="/tags">Tags</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="About Me" href="/about">About Me</a>
+            </li>
+          
+        
+
+        
+
+        
+      </ul>
+    </div>
+
+    
+      <div class="avatar-container">
+        <div class="avatar-img-border">
+          <a title="takumakume pages" href="/">
+            <img class="avatar-img" src="/img/profile.jpg" alt="takumakume pages" />
+          </a>
+        </div>
+      </div>
+    
+
+  </div>
+</nav>
+
+
+
+
+    
+
+
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+<div class="pswp__bg"></div>
+
+<div class="pswp__scroll-wrap">
+    
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    
+    <div class="pswp__ui pswp__ui--hidden">
+    <div class="pswp__top-bar">
+      
+      <div class="pswp__counter"></div>
+      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+      <button class="pswp__button pswp__button--share" title="Share"></button>
+      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+      
+      
+      <div class="pswp__preloader">
+        <div class="pswp__preloader__icn">
+          <div class="pswp__preloader__cut">
+            <div class="pswp__preloader__donut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+      <div class="pswp__share-tooltip"></div>
+    </div>
+    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+    </button>
+    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+    </button>
+    <div class="pswp__caption">
+      <div class="pswp__caption__center"></div>
+    </div>
+    </div>
+    </div>
+</div>
+
+
+  
+  
+  
+
+
+
+
+
+
+  
+
+  <header class="header-section ">
+    
+    
+    <div class="intro-header no-img">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="blog-heading">
+              
+                <h1>mod_mruby &#43; http-access-limiterでファイル単位での同時アクセス数を制御し性能比較をした</h1>
+              
+              
+                <hr class="small">
+              
+              
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+  </header>
+
+
+    
+<div class="container" role="main">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <article role="main" class="blog-post">
+        <h3 id="はじめに">はじめに</h3>
+<p>こんばんは、GMOペパボの久米です。</p>
+<p>「<a href="/blog/2016-07-26-install-mod-mruby/">httpd + mod_mrubyでプログラマブルなWEBサーバを構築する</a>」というエントリを書きましたが、今回は <a href="https://github.com/matsumoto-r/mod_mruby">mod_mruby</a> を使った、 <a href="https://twitter.com/matsumotory">@matsumotory</a>さん が作成している <a href="https://github.com/matsumoto-r/http-access-limiter">http-access-limiter</a> というリクエスト先ファイル単位での同時アクセス数を制御できるソフトウェアの導入と検証を行います。</p>
+<p>レンタルサーバなど複数のドメインを収容している場合など、サーバの管理者が実行されるプログラムを制御出来ない、あるいはリクエスト数を想定できない時に以下のような運用課題が発生する。</p>
+<ul>
+<li>サーバに収容している特定のドメインに大量にアクセスが発生し過負荷状態になる。
+<ul>
+<li>これは <a href="https://github.com/matsumoto-r/mod_vhost_maxclients">matsumoto-r/mod_vhost_maxclients</a> を利用することで解決する。</li>
+<li>しかし、リクエスト先ドメイン単位での同時アクセス数を制限するため負荷にほとんど影響しないファイルまで含めて制御対象となる。</li>
+</ul>
+</li>
+<li>サーバに収容している特定のプログラムが重い処理を実行され過負荷状態になる。</li>
+</ul>
+<p>本エントリでは <a href="https://github.com/matsumoto-r/mod_mruby">mod_mruby</a> + <a href="https://github.com/matsumoto-r/http-access-limiter">http-access-limiter</a> でそれらを解決するための導入検証及び性能比較を行います。</p>
+<h3 id="前提">前提</h3>
+<p><a href="/blog/2016-07-26-install-mod-mruby/">httpd + mod_mrubyでプログラマブルなWEBサーバを構築する</a> で構築した環境を利用する。</p>
+<h3 id="導入">導入</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">git clone https://github.com/matsumoto-r/http-access-limiter.git
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> http-access-limiter
+</span></span><span class="line"><span class="cl">cp -pi access_limiter_apache.conf /etc/httpd/conf.d/
+</span></span><span class="line"><span class="cl">cp -pri access_limiter /etc/httpd/conf.d/
+</span></span></code></pre></div><p>導入は以上。とても簡単ですね！</p>
+<h5 id="etchttpdconfdaccess_limiter_apacheconf">/etc/httpd/conf.d/access_limiter_apache.conf</h5>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">&lt;IfModule mod_mruby.c&gt;
+</span></span><span class="line"><span class="cl">  mrubyPostConfigMiddle         /etc/httpd/conf.d/access_limiter/access_limiter_init.rb cache
+</span></span><span class="line"><span class="cl">  mrubyChildInitMiddle          /etc/httpd/conf.d/access_limiter/access_limiter_worker_init.rb cache
+</span></span><span class="line"><span class="cl">  &lt;FilesMatch ^.*<span class="se">\.</span>php$&gt;
+</span></span><span class="line"><span class="cl">    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb cache
+</span></span><span class="line"><span class="cl">    mrubyLogTransactionMiddle     /etc/httpd/conf.d/access_limiter/access_limiter_end.rb cache
+</span></span><span class="line"><span class="cl">  &lt;/FilesMatch&gt;
+</span></span><span class="line"><span class="cl">&lt;/IfModule&gt;
+</span></span></code></pre></div><p><strong>&ldquo;FilesMatch ^.*.php$&rdquo;</strong> の部分で制御対象のファイルを指定します。
+上記ではすべての　php ファイルが指定されています。</p>
+<h5 id="etchttpdconfdaccess_limiteraccess_limiterrb">/etc/httpd/conf.d/access_limiter/access_limiter.rb</h5>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1">####</span>
+</span></span><span class="line"><span class="cl"><span class="nv">threshold</span> <span class="o">=</span> <span class="m">2</span>
+</span></span><span class="line"><span class="cl"><span class="c1">####</span>
+</span></span><span class="line"><span class="cl"><span class="o">(</span>snip<span class="o">)</span>
+</span></span></code></pre></div><p>上記を編集して、許容する同時アクセス数を指定します。</p>
+<h5 id="httpdをrestartします">httpdをrestartします。</h5>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">/etc/init.d/httpd configtest <span class="o">&amp;&amp;</span> /etc/init.d/httpd restart
+</span></span></code></pre></div><h3 id="以下のコードをdocumentrootに配置して動作確認">以下のコードをDocumentRootに配置して動作確認</h3>
+<h5 id="sleepphp">sleep.php</h5>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="o">&lt;?</span><span class="nx">php</span>
+</span></span><span class="line"><span class="cl"><span class="nx">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="k">echo</span> <span class="s2">&#34;loaded&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="cp">?&gt;</span><span class="err">
+</span></span></span></code></pre></div><p>ブラウザから３つアクセスを行う。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl">1つ目： loaded
+</span></span><span class="line"><span class="cl">2つ目： loaded
+</span></span><span class="line"><span class="cl">3つ目： Service Temporarily Unavailable
+</span></span></code></pre></div><p>error_log</p>
+<pre tabindex="0"><code>[Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php counter:1
+[Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php counter:2
+[Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php counter:3
+[Tue Jul 27 00:48:42 2016] [notice] access_limiter: file:/var/www/html/sleep.php reached threshold: 2: return 503
+</code></pre><p>正常にアクセスを制御できていることが分かる。</p>
+<h3 id="性能を比較">性能を比較</h3>
+<p>http-access-limiterを利用することでどの程度パフォーマンスに影響するかを確認したい。
+以下の性能差を確認する。</p>
+<ul>
+<li>http-access-limiterを利用しない。</li>
+<li>http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。</li>
+<li>http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定し、キャッシュオプションを無効にする。</li>
+</ul>
+<h4 id="環境">環境</h4>
+<p>前回の性能測定時は１CPUの仮想マシンでサーバ側とクライアント側を実装していた。
+<a href="https://twitter.com/matsumotory">@matsumotory</a>さんに仮想マシンが１つのCPUを掴もうとして競合して処理待ちが発生すると測定値の精度が落ちる場合があるとご指摘いただきましたので今回は仮想マシンの性能を上げてます。</p>
+<ul>
+<li>ホスト: MacBook Pro (Retina 13-inch、Early 2015) 2.7 GHz Intel Core i5</li>
+<li>仮想マシン
+<ul>
+<li>サーバ (httpd + mod_mruby + http-access-limtter)
+<ul>
+<li>CPU * 2</li>
+<li>RAM 2GB</li>
+</ul>
+</li>
+<li>クライアント (ab)
+<ul>
+<li>CPU * 2</li>
+<li>RAM 2GB</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="サーバ側の実装">サーバ側の実装</h4>
+<h5 id="etchttpdconfdaccess_limiter_apacheconf-1">/etc/httpd/conf.d/access_limiter_apache.conf</h5>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">&lt;IfModule mod_mruby.c&gt;
+</span></span><span class="line"><span class="cl">  mrubyPostConfigMiddle         /etc/httpd/conf.d/access_limiter/access_limiter_init.rb cache
+</span></span><span class="line"><span class="cl">  mrubyChildInitMiddle          /etc/httpd/conf.d/access_limiter/access_limiter_worker_init.rb cache
+</span></span><span class="line"><span class="cl">  &lt;FilesMatch ^.*<span class="se">\.</span>php$&gt;
+</span></span><span class="line"><span class="cl">    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb cache
+</span></span><span class="line"><span class="cl">    mrubyLogTransactionMiddle     /etc/httpd/conf.d/access_limiter/access_limiter_end.rb cache
+</span></span><span class="line"><span class="cl">  &lt;/FilesMatch&gt;
+</span></span><span class="line"><span class="cl">&lt;/IfModule&gt;
+</span></span></code></pre></div><h5 id="etchttpdconfdaccess_limiteraccess_limiterrb-1">/etc/httpd/conf.d/access_limiter/access_limiter.rb</h5>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl"><span class="c1">####</span>
+</span></span><span class="line"><span class="cl"><span class="nv">threshold</span> <span class="o">=</span> <span class="m">90000000</span>
+</span></span><span class="line"><span class="cl"><span class="c1">####</span>
+</span></span></code></pre></div><p>とりあえず9千万に設定。</p>
+<h5 id="アクセス先ファイル-varwwwhtmltestphp">アクセス先ファイル: /var/www/html/test.php</h5>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="o">&lt;?</span><span class="nx">php</span>
+</span></span><span class="line"><span class="cl"><span class="nx">phpinfo</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="cp">?&gt;</span><span class="err">
+</span></span></span></code></pre></div><h4 id="測定結果http-access-limiterを利用しない">【測定結果】http-access-limiterを利用しない。</h4>
+<pre tabindex="0"><code># ab -c 100 -n 100000 -k http://192.168.100.51/test.php
+This is ApacheBench, Version 2.3 &lt;$Revision: 655654 $&gt;
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 192.168.100.51 (be patient)
+Completed 10000 requests
+:
+Finished 100000 requests
+
+
+Server Software:        Apache/2.2.15
+Server Hostname:        192.168.100.51
+Server Port:            80
+
+Document Path:          /test.php
+Document Length:        51635 bytes
+
+Concurrency Level:      100
+Time taken for tests:   279.473 seconds
+Complete requests:      100000
+Failed requests:        0
+Write errors:           0
+Keep-Alive requests:    0
+Total transferred:      5181044073 bytes
+HTML transferred:       5163842353 bytes
+Requests per second:    357.82 [#/sec] (mean)
+Time per request:       279.473 [ms] (mean)
+Time per request:       2.795 [ms] (mean, across all concurrent requests)
+Transfer rate:          18104.11 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0   18  52.6     12    1917
+Processing:     2  261 487.5    140   28597
+Waiting:        0   68 166.3     31    7075
+Total:          2  279 490.3    157   28601
+</code></pre><h4 id="測定結果http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく">【測定結果】http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。</h4>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">tail -f  /var/log/httpd/error_log <span class="p">|</span> grep <span class="m">503</span>
+</span></span></code></pre></div><p>測定中にhttp-access-limiterに引っかかってしまうならば、しきい値を調整しなければならないためモニタリングしておく。</p>
+<pre tabindex="0"><code># ab -c 100 -n 100000 -k http://192.168.100.51/test.php
+This is ApacheBench, Version 2.3 &lt;$Revision: 655654 $&gt;
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 192.168.100.51 (be patient)
+Completed 10000 requests
+:
+Finished 100000 requests
+
+
+Server Software:        Apache/2.2.15
+Server Hostname:        192.168.100.51
+Server Port:            80
+
+Document Path:          /test.php
+Document Length:        51645 bytes
+
+Concurrency Level:      100
+Time taken for tests:   287.744 seconds
+Complete requests:      100000
+Failed requests:        0
+Write errors:           0
+Keep-Alive requests:    0
+Total transferred:      5183134910 bytes
+HTML transferred:       5165926310 bytes
+Requests per second:    347.53 [#/sec] (mean)
+Time per request:       287.744 [ms] (mean)
+Time per request:       2.877 [ms] (mean, across all concurrent requests)
+Transfer rate:          17590.82 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0   12  38.7      5    1104
+Processing:     2  275 462.1    158   14122
+Waiting:        0   90 207.1     36    4645
+Total:          2  287 464.5    170   14127
+
+Percentage of the requests served within a certain time (ms)
+  50%    170
+  66%    224
+  75%    276
+  80%    323
+  90%    538
+  95%    999
+  98%   1606
+  99%   2014
+ 100%  14127 (longest request)
+</code></pre><h5 id="測定結果http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておくキャッシュオプションを無効にする">【測定結果】http-access-limiterを有効にして実質アクセス制限にかからないようなしきい値に設定しておく。キャッシュオプションを無効にする。</h5>
+<ul>
+<li>cacheオプションを外すことで、mrubyスクリプトが毎回コンパイルされる。代わりに内容が変更されてもhttpdのリロードが不要。</li>
+<li>本検証はhttpdのgracefulなしにしきい値を変更する場合を考えてどの程度パフォーマンスが低下するかを確認したい。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gd">-    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb cache
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+    mrubyAccessCheckerMiddle      /etc/httpd/conf.d/access_limiter/access_limiter.rb
+</span></span></span></code></pre></div><pre tabindex="0"><code>root@client vagrant]# ab -c 100 -n 100000 -k http://192.168.100.51/test.php
+This is ApacheBench, Version 2.3 &lt;$Revision: 655654 $&gt;
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 192.168.100.51 (be patient)
+Completed 10000 requests
+:
+Finished 100000 requests
+
+
+Server Software:        Apache/2.2.15
+Server Hostname:        192.168.100.51
+Server Port:            80
+
+Document Path:          /test.php
+Document Length:        51645 bytes
+
+Concurrency Level:      100
+Time taken for tests:   301.550 seconds
+Complete requests:      100000
+Failed requests:        0
+Write errors:           0
+Keep-Alive requests:    0
+Total transferred:      5182168550 bytes
+HTML transferred:       5164965454 bytes
+Requests per second:    331.62 [#/sec] (mean)
+Time per request:       301.550 [ms] (mean)
+Time per request:       3.016 [ms] (mean, across all concurrent requests)
+Transfer rate:          16782.33 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    9  28.3      3    1303
+Processing:     2  291 410.5    186   12616
+Waiting:        0   94 192.1     41    7384
+Total:          3  300 412.5    195   12651
+
+Percentage of the requests served within a certain time (ms)
+  50%    195
+  66%    262
+  75%    326
+  80%    375
+  90%    559
+  95%    906
+  98%   1563
+  99%   2024
+ 100%  12651 (longest request)
+</code></pre><h3 id="性能差を比較">性能差を比較</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">項目</th>
+<th>Rec/sec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">http-access-limiter：無効</td>
+<td>357.82</td>
+</tr>
+<tr>
+<td style="text-align:left">http-access-limiter：有効</td>
+<td>347.53</td>
+</tr>
+<tr>
+<td style="text-align:left">http-access-limiter：有効（no cache)</td>
+<td>331.62</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p>http-access-limiterを有効にした時にどの程度のパフォーマンス低下が発生するか。</p>
+<ul>
+<li>Requests per secondは約2.9％低下する。</li>
+</ul>
+</li>
+<li>
+<p>http-access-limiterのcacheオプションを無効にした場合にどの程度パフォーマンスが低下するか。</p>
+<ul>
+<li>Requests per secondは約4.5%低下する。</li>
+</ul>
+</li>
+</ul>
+<h3 id="総括">総括</h3>
+<p>http-access-limiterで思ったよりパフォーマンスの劣化は見られなかった。
+時間的に実施できていないが、想定よりも性能劣化が発生しない印象なので差を広げる意味でも100万リクエストくらい処理させた場合の性能差も測定したい。
+後は、cacheオプションを外した時にコンパイル処理がどの程度メモリを消費するかなども見る必要があるとご指摘も頂いているので後日の課題としたい。
+更にはhttp-access-limiterを運用に乗せる場合などを考慮し、より設定を管理しやすくするにはどうすればよいかなどの考察も行っていく必要があると考える。</p>
+
+
+        
+          <div class="blog-tags">
+            
+              <a href="//tags/mruby/">mruby</a>&nbsp;
+            
+              <a href="//tags/mod_mruby/">mod_mruby</a>&nbsp;
+            
+          </div>
+        
+
+        
+
+        
+      </article>
+
+      
+        <ul class="pager blog-pager">
+          
+            <li class="previous">
+              <a href="/blog/2016-07-26-install-mod-mruby/" data-toggle="tooltip" data-placement="top" title="httpd &#43; mod_mrubyでプログラマブルなWEBサーバを構築する">&larr; Previous Post</a>
+            </li>
+          
+          
+            <li class="next">
+              <a href="/blog/2016-08-17-mruby-ci/" data-toggle="tooltip" data-placement="top" title="mrubyのCIをdocker&#43;rake&#43;travis-ciでやる">Next Post &rarr;</a>
+            </li>
+          
+        </ul>
+      
+
+
+      
+
+    </div>
+  </div>
+</div>
+
+      
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <ul class="list-inline text-center footer-links">
+          
+              <li>
+		
+		  <a href="https://www.facebook.com/takumakume" title="Facebook">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-facebook fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+		
+		  <a href="https://github.com/takumakume" title="GitHub">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+		
+		  <a href="https://twitter.com/takumakume" title="Twitter">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+		
+		  <a href="https://www.instagram.com/takumakume" title="Instagram">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-instagram fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+          
+          <li>
+            <a href="" title="RSS">
+              <span class="fa-stack fa-lg">
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="credits copyright text-muted">
+          
+            
+              <a href="https://takumakume.github.io">Takuma Kume</a>
+            
+          
+
+          &nbsp;&bull;&nbsp;&copy;
+          
+            2022
+          
+
+          
+            &nbsp;&bull;&nbsp;
+            <a href="/">takumakume pages</a>
+          
+        </p>
+        
+        <p class="credits theme-by text-muted">
+          <a href="https://gohugo.io">Hugo v0.105.0</a> powered &nbsp;&bull;&nbsp; Theme <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a> adapted from <a href="https://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a>
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</footer><script src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="/js/main.js"></script><script> renderMathInElement(document.body); </script><script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.js" integrity="sha384-QELNnmcmU8IR9ZAykt67vGr9/rZJdHbiWi64V88fCPaOohUlHCqUD/unNN0BXSqy" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe-ui-default.min.js" integrity="sha384-m67o7SkQ1ALzKZIFh4CiTA8tmadaujiTa9Vu+nqPSwDOqHrDmxLezTdFln8077+q" crossorigin="anonymous"></script><script src="/js/load-photoswipe.js"></script>
+
+
+
+
+
+
+
+
+
+    
+  </body>
+</html>
+

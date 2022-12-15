@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>kubectl-credentials-broker on takumakume pages</title>
+    <link>/tags/kubectl-credentials-broker/</link>
+    <description>Recent content in kubectl-credentials-broker on takumakume pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-jp</language>
+    <lastBuildDate>Mon, 17 May 2021 20:38:52 +0900</lastBuildDate><atom:link href="/tags/kubectl-credentials-broker/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>kubectl実行時に任意のコマンドを実行して認証情報を更新できるpluginを実装した</title>
+      <link>/blog/2021-05-17-kubectl-credentials-broker/</link>
+      <pubDate>Mon, 17 May 2021 20:38:52 +0900</pubDate>
+      
+      <guid>/blog/2021-05-17-kubectl-credentials-broker/</guid>
+      <description>takumakume/kubectl-credentials-broker という kubectl plugin を作ったので、経緯やできることについて説明します。 kubectl-credentials-broker とは 一言でいうと、 kubectl 実行時に任意のコマンドを実行して指定されたクライアント証</description>
+    </item>
+    
+  </channel>
+</rss>

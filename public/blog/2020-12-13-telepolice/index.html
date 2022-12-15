@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" itemscope itemtype="http://schema.org/WebPage">
+  <head>
+    
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <title>telepresenceを用いた開発環境における現状の課題 - takumakume pages</title>
+  <meta name="description" content="この記事は GMO ペパボエンジニア Advent Calendar 2020 の 13日目 の記事です。 昨日は @mrtc0 さんの 「Kubernetes のセキュリティを学べる kubectf を作った」 でした。 私も社">
+  <meta name="author" content="Takuma Kume"/><script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "WebSite",
+    "name": "takumakume pages",
+    
+    "url": "\/"
+}
+</script><script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "Organization",
+  "name": "",
+  "url": "\/"
+  
+  
+  
+  
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@id": "\/",
+          "name": "home"
+        }
+    },{
+        "@type": "ListItem",
+        "position": 3,
+        "item": {
+          "@id": "\/blog\/2020-12-13-telepolice\/",
+          "name": "Telepresenceを用いた開発環境における現状の課題"
+        }
+    }]
+}
+</script><script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "Article",
+  "author": {
+    "name" : "Takuma Kume"
+  },
+  "headline": "telepresenceを用いた開発環境における現状の課題",
+  "description" : "この記事は GMO ペパボエンジニア Advent Calendar 2020 の 13日目 の記事です。 昨日は @mrtc0 さんの 「Kubernetes のセキュリティを学べる kubectf を作った」 でした。 私も社",
+  "inLanguage" : "en",
+  "wordCount":  2206 ,
+  "datePublished" : "2020-12-12T00:00:00",
+  "dateModified" : "2020-12-12T00:00:00",
+  "image" : "\/img\/profile.jpg",
+  "keywords" : [ "kubernetes, telepresence, telepolice" ],
+  "mainEntityOfPage" : "\/blog\/2020-12-13-telepolice\/",
+  "publisher" : {
+    "@type": "Organization",
+    "name" : "\/",
+    "logo" : {
+        "@type" : "ImageObject",
+        "url" : "\/img\/profile.jpg",
+        "height" :  60 ,
+        "width" :  60
+    }
+  }
+}
+</script>
+
+<meta property="og:title" content="telepresenceを用いた開発環境における現状の課題" />
+<meta property="og:description" content="この記事は GMO ペパボエンジニア Advent Calendar 2020 の 13日目 の記事です。 昨日は @mrtc0 さんの 「Kubernetes のセキュリティを学べる kubectf を作った」 でした。 私も社">
+<meta property="og:image" content="/img/profile.jpg" />
+<meta property="og:url" content="/blog/2020-12-13-telepolice/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="takumakume pages" />
+
+  <meta name="twitter:title" content="telepresenceを用いた開発環境における現状の課題" />
+  <meta name="twitter:description" content="この記事は GMO ペパボエンジニア Advent Calendar 2020 の 13日目 の記事です。 昨日は @mrtc0 さんの 「Kubernetes のセキュリティを学べる kubectf を作った」 でした。 私も社">
+  <meta name="twitter:image" content="/img/profile.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@takumakume" />
+  <meta name="twitter:creator" content="@takumakume" />
+  <link href='/img/favicon.ico' rel='icon' type='image/x-icon'/>
+  <meta name="generator" content="Hugo 0.105.0">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="takumakume pages"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"><link rel="stylesheet" href="/css/main.css" /><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" /><link rel="stylesheet" href="/css/syntax.css" /><link rel="stylesheet" href="/css/codeblock.css" /><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.css" integrity="sha384-h/L2W9KefUClHWaty3SLE5F/qvc4djlyR4qY3NUV5HGQBBW7stbcfff1+I/vmsHh" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/default-skin/default-skin.min.css" integrity="sha384-iD0dNku6PYSIQLyfTOpB06F2KCZJAKLOThS5HRe8b3ibhdEQ6eKsFf/EeFxdOt5R" crossorigin="anonymous">
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+	ga('create', 'UA-109817270-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+  </head>
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top navbar-custom">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">takumakume pages</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="nav navbar-nav navbar-right">
+        
+          
+            <li>
+              <a title="Blog" href="/blog">Blog</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="Tags" href="/tags">Tags</a>
+            </li>
+          
+        
+          
+            <li>
+              <a title="About Me" href="/about">About Me</a>
+            </li>
+          
+        
+
+        
+
+        
+      </ul>
+    </div>
+
+    
+      <div class="avatar-container">
+        <div class="avatar-img-border">
+          <a title="takumakume pages" href="/">
+            <img class="avatar-img" src="/img/profile.jpg" alt="takumakume pages" />
+          </a>
+        </div>
+      </div>
+    
+
+  </div>
+</nav>
+
+
+
+
+    
+
+
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+<div class="pswp__bg"></div>
+
+<div class="pswp__scroll-wrap">
+    
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    
+    <div class="pswp__ui pswp__ui--hidden">
+    <div class="pswp__top-bar">
+      
+      <div class="pswp__counter"></div>
+      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+      <button class="pswp__button pswp__button--share" title="Share"></button>
+      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+      
+      
+      <div class="pswp__preloader">
+        <div class="pswp__preloader__icn">
+          <div class="pswp__preloader__cut">
+            <div class="pswp__preloader__donut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+      <div class="pswp__share-tooltip"></div>
+    </div>
+    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+    </button>
+    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+    </button>
+    <div class="pswp__caption">
+      <div class="pswp__caption__center"></div>
+    </div>
+    </div>
+    </div>
+</div>
+
+
+  
+  
+  
+
+
+
+
+
+
+  
+
+  <header class="header-section ">
+    
+    
+    <div class="intro-header no-img">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+            <div class="blog-heading">
+              
+                <h1>telepresenceを用いた開発環境における現状の課題</h1>
+              
+              
+                <hr class="small">
+              
+              
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+  </header>
+
+
+    
+<div class="container" role="main">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <article role="main" class="blog-post">
+        <hr>
+<p>この記事は <a href="https://adventar.org/calendars/5420">GMO ペパボエンジニア Advent Calendar 2020</a> の 13日目 の記事です。</p>
+<p>昨日は @mrtc0 さんの <a href="https://blog.ssrf.in/post/kubectf/">「Kubernetes のセキュリティを学べる kubectf を作った</a>」 でした。
+私も社内でkubectfをやっていて、mrtc0さん直々に教えてもらっています。ほんとうに福利厚生です。</p>
+<hr>
+<h2 id="目次">目次</h2>
+<ul>
+<li>はじめに</li>
+<li>telepresence について</li>
+<li>開発環境の説明</li>
+<li>生じた課題と解決方法</li>
+<li>新たに発生した課題</li>
+<li>今後について</li>
+</ul>
+<h2 id="はじめに">はじめに</h2>
+<p>kumesec こと @takumakume です。
+GMOペパボのホスティング事業部でSREをしています。</p>
+<p>現在の仕事はVMベースのインフラ上で運用しているWebアプリケーションを、kubernetesをはじめとしたツールの導入によりクラウドネィティブにしていくことです。
+最近は kubernetes + OpenStack な環境でLBaaSを動かすためにあれこれしています。</p>
+<p>本エントリでは <a href="https://github.com/telepresenceio/telepresence">telepresenceio/telepresence</a> を用いた開発環境における現状の課題を説明したいと思います。</p>
+<h2 id="telepresence-について">telepresence について</h2>
+<p>本エントリに興味を持った人は、おそらくtelepresenceを既に使っている方が多いと思いますし、telepresenceの説明については既に多くの資料があるためここでは割愛します。</p>
+<p>弊社のエンジニアが書いている以下の資料が参考になります。</p>
+<p><a href="https://speakerdeck.com/shiro16/telepresence-deshi-meru-k8s-shi-dai-falserokarukai-fa">telepresence で始める k8s 時代のローカル開発</a></p>
+<h2 id="telepresence-0105-までの動作について">telepresence-0.105 までの動作について</h2>
+<p>課題を説明前に、前提知識として <code>telepresence-0.105</code> の動きを説明します。</p>
+<p>以下のような Deployment が存在していて、 <code>App</code> の開発を Client で行いたいとします。</p>
+<p><img src="/img/2020-12-13/1.png" alt="image"></p>
+<p>その場合に、以下のようなコマンドを実行します。</p>
+<pre tabindex="0"><code>telepresence --swap-deployment {DEPLOYMENT_NAME} \
+  --method container \
+  --from-pod 8001 \
+  --docker-run --rm -v `pwd`:/src myapp:0.0.1
+</code></pre><p>そうすると、環境は以下のように変化します。</p>
+<p><img src="/img/2020-12-13/2.png" alt="image"></p>
+<p>telepresence を実行すると kubernetes 環境に proxy の役割を担う Deployment が実行されます。
+その proxy が受けるリクエストは手元で実行される <code>App</code> に転送されます。
+手元 <code>App</code> はローカルのソースコードをマウントしているため、手元のエディタからの変更がアプリケーションに反映するという仕組みです。</p>
+<p>次に、手元で実行中のtelepresenceを <code>Ctl+C</code> などで SIGINT を telepresence のプロセスに送信して終了することでクリーンナップ処理が実行されます。</p>
+<p><img src="/img/2020-12-13/3.png" alt="image"></p>
+<p>上記のように、 proxy の Deployment が削除され、元の Deployment の Replica 数をリカバリし環境を元通りにします。</p>
+<h2 id="生じた課題と解決方法">生じた課題と解決方法</h2>
+<p><a href="https://github.com/telepresenceio/telepresence/issues/260">telepresenceio/telepresence/issues/260</a> この課題が発生しました。</p>
+<p>先程説明したように、シグナルを送信して正常終了した場合はクリーンナップ処理が行われて環境が元に戻ります。
+しかし、telepresenceを使って開発している途中にパソコンを閉じてネットワークから切り離されたり、ターミナルを閉じてしまいシェル毎終了したりすることで、クリーンナップ処理が走らないパターンが発生します。</p>
+<p>その場合は、以下のように kubernetes 上の proxy と手元とのコネクションがダウンした状態になります。</p>
+<p><img src="/img/2020-12-13/4.png" alt="image"></p>
+<p>このままでは、 <code>App</code> は存在しない状態になってしまうので、他の開発をしたいときに <code>App</code> が機能しない状態となってしまうため手動でクリーンナップ処理相当のリカバリをする必要がありました。</p>
+<p>そこで、私は以下のソフトウェアを実装して定期的にこのような状態になった Deployment を検知して、リカバリ処理相当のことを自動的に行うようにしました。</p>
+<p><a href="https://github.com/takumakume/telepolice">takumakume/telepolice</a></p>
+<p>このソフトウェアは具体的に以下の動きをします。</p>
+<ul>
+<li><code>telepresence</code> ラベルが付与されたPodを探索 (telepresenceが生成するproxyの役割を持ったPod)</li>
+<li>それらのPodに対して <code>kubectl exec</code> 相当を実行し、proxyプロセスが応答するか確認 ( <code>nc localhost 9055</code> で応答するか)</li>
+<li>数回失敗したPodは不正終了をしたとみなしてリカバリを実行
+<ul>
+<li>telepresence proxy Pod の <code>OwnerReferences</code> を使って、Deploymentを特定</li>
+<li><strong>telepresence proxy Deployment の <code>last-applied-configuration</code> Annotation 内に元のDeployment名が入っているので、その情報を使って元のDeplpymentのreplica数を元に戻す</strong></li>
+<li>telepresence proxy Deployment を Delete</li>
+</ul>
+</li>
+</ul>
+<p>この動作を定期的に実行することで、不正終了した telepresence のリソースをリカバリしていました。</p>
+<h2 id="新たに発生した課題">新たに発生した課題</h2>
+<p><code>telepresence-0.106</code> から挙動が変わり、開発した telepolice が機能しなくなりました。
+以下の動作ができなくなったのが原因です。</p>
+<blockquote>
+<p>telepresence proxy Deployment の <code>last-applied-configuration</code> Annotation 内に元のDeployment名が入っているので、その情報を使って元のDeplpymentのreplica数を元に戻す</p>
+</blockquote>
+<p>理由は、以下の変更が telepresence に加わったためです。</p>
+<p><a href="https://github.com/telepresenceio/telepresence/pull/1404">telepresenceio/telepresence/pull/1404 - Proxy as a Pod</a></p>
+<p>これまで、 telepresence の proxy は Deployment として作られており、元の Deployment の <code>last-applied-configuration</code> をコピーしてくれていました。</p>
+<p>しかし、これからは Deployment ではなく Pod として作られることになり、 <code>last-applied-configuration</code> もなくなり、元の Deployment を辿るための情報がなくなってしまいました。</p>
+<p>Deployment から Pod に変更された理由を追うと、以下のような点がありました。</p>
+<ul>
+<li>シンプルである</li>
+<li>Deployment よりも Pod の方が高速</li>
+<li>将来的に Deployment 以外のコントローラーをサポートできる</li>
+</ul>
+<p>理由については非常に納得できます。</p>
+<h3 id="ワークアラウンドについて">ワークアラウンドについて</h3>
+<p>新たに課題が発生しましたが、現時点では telepresence 実行時の環境変数に <code>TELEPRESENCE_USE_DEPLOYMENT</code> を付与することで、従来通りのDeploymentの挙動に戻す事ができます。</p>
+<h2 id="今後の対応">今後の対応</h2>
+<p>ひとまずは telepresence の仕様変更に追従していきたいと思っています。
+ただし、今のやり方では元の Deployment を機械的に判断する方法がありません。
+そのため、 telepresence proxy Pod を生成するときに Annotation 等に必要な情報を突っ込んでおくといったことをする必要がありそうです。
+この場合は telepresence 自体に機能を追加することになるかもしれません。よりよい方法がないか考えたいと思います。</p>
+<h2 id="最後に">最後に</h2>
+<p>telepolice というソフトウェアを使って telepresence の不正終了のリカバリを自動化しています。
+telepresence を使っていて、同じ問題に遭遇した方は他にどんな手段でリカバリをしているのか気になりますので、別の案をお持ちの方がいらっしゃれば是非コメントを頂きたいと思います！</p>
+<hr>
+<p>明日の <a href="https://adventar.org/calendars/5420">Advent Calendar</a> は kitkatayama さんです！</p>
+
+
+        
+          <div class="blog-tags">
+            
+              <a href="//tags/kubernetes/">kubernetes</a>&nbsp;
+            
+              <a href="//tags/telepresence/">telepresence</a>&nbsp;
+            
+              <a href="//tags/telepolice/">telepolice</a>&nbsp;
+            
+          </div>
+        
+
+        
+
+        
+      </article>
+
+      
+        <ul class="pager blog-pager">
+          
+            <li class="previous">
+              <a href="/blog/2018-05-02-ngx_mruby_v2/" data-toggle="tooltip" data-placement="top" title="ngx_mruby v2 の新機能を見る">&larr; Previous Post</a>
+            </li>
+          
+          
+            <li class="next">
+              <a href="/blog/2021-05-17-kubectl-credentials-broker/" data-toggle="tooltip" data-placement="top" title="kubectl実行時に任意のコマンドを実行して認証情報を更新できるpluginを実装した">Next Post &rarr;</a>
+            </li>
+          
+        </ul>
+      
+
+
+      
+
+    </div>
+  </div>
+</div>
+
+      
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <ul class="list-inline text-center footer-links">
+          
+              <li>
+		
+		  <a href="https://www.facebook.com/takumakume" title="Facebook">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-facebook fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+		
+		  <a href="https://github.com/takumakume" title="GitHub">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+		
+		  <a href="https://twitter.com/takumakume" title="Twitter">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+              <li>
+		
+		  <a href="https://www.instagram.com/takumakume" title="Instagram">
+		
+                  <span class="fa-stack fa-lg">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-instagram fa-stack-1x fa-inverse"></i>
+                  </span>
+                </a>
+              </li>
+          
+          <li>
+            <a href="" title="RSS">
+              <span class="fa-stack fa-lg">
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="credits copyright text-muted">
+          
+            
+              <a href="https://takumakume.github.io">Takuma Kume</a>
+            
+          
+
+          &nbsp;&bull;&nbsp;&copy;
+          
+            2022
+          
+
+          
+            &nbsp;&bull;&nbsp;
+            <a href="/">takumakume pages</a>
+          
+        </p>
+        
+        <p class="credits theme-by text-muted">
+          <a href="https://gohugo.io">Hugo v0.105.0</a> powered &nbsp;&bull;&nbsp; Theme <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a> adapted from <a href="https://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a>
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</footer><script src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="/js/main.js"></script><script> renderMathInElement(document.body); </script><script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.js" integrity="sha384-QELNnmcmU8IR9ZAykt67vGr9/rZJdHbiWi64V88fCPaOohUlHCqUD/unNN0BXSqy" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe-ui-default.min.js" integrity="sha384-m67o7SkQ1ALzKZIFh4CiTA8tmadaujiTa9Vu+nqPSwDOqHrDmxLezTdFln8077+q" crossorigin="anonymous"></script><script src="/js/load-photoswipe.js"></script>
+
+
+
+
+
+
+
+
+
+    
+  </body>
+</html>
+
