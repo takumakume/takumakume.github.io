@@ -62,11 +62,19 @@ CTO、技術責任者、事業部CTOは東京に集中しています。私は�
 
 最近の取り組みをいくつか紹介します。
 
+<br>
+
 <script defer class="speakerdeck-embed" data-id="0ccd6d8ca4fe4aec8dc711987acf1c35" data-ratio="1.7772511848341233" src="//speakerdeck.com/assets/embed.js"></script>
+
+<br>
 
 ロリポップ! for Gamersというゲームサーバのホスティングサービスを提供開始しました。新規事業の立ち上げもスピード感を持って行っています。
 
+<br>
+
 <script defer class="speakerdeck-embed" data-id="61b56d97d273428a8819ecbdaa34c645" data-ratio="1.7772511848341233" src="//speakerdeck.com/assets/embed.js"></script>
+
+<br>
 
 ホスティング事業部の面白いところは、20年以上の歴史あるサービス開発から新規事業開発までやっていたり、世に無いアーキテクチャを生み出したり、幅広い技術を取り扱えるところです。
 
