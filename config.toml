@@ -10,6 +10,9 @@ pygmentCodeFences   = true
 googleAnalytics     = "UA-109817270-1"
 #disqusShortname     = "XXX"
 
+[markup.goldmark.renderer]
+unsafe = true
+
 [Params]
   subtitle = ""
   logo = "img/profile.jpg"
