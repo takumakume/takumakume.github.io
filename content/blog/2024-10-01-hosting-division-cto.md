@@ -3,7 +3,7 @@ author: "Takuma Kume"
 title: "GMOペパボ株式会社 ホスティング事業部CTOに就任しました"
 linktitle: "GMOペパボ株式会社 ホスティング事業部CTOに就任しました"
 date: 2024-10-01T00:00:00+09:00
-draft: true
+draft: false
 highlight: true
 tags: []
 ---
